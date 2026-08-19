@@ -451,7 +451,13 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const floatY = ROAD_HEIGHT - 34 + Math.sin(tick * 0.04 + idx * 1.5) * 7;
         const proj = project3D(laneX, floatY, stageZ, width, height);
 
-        if (!proj || proj.relZ <= 15 || proj.relZ > 2300) return;
+        if (!proj || proj.relZ <= 15 || proj.relZ > 2450) return;
+
+        // Smooth depth visibility & distance fade
+        const farFade = Math.max(0, Math.min(1, (2450 - proj.relZ) / 750));
+        const nearFade = Math.max(0, Math.min(1, (proj.relZ - 18) / 115));
+        const visibilityAlpha = farFade * nearFade;
+        if (visibilityAlpha <= 0.01) return;
 
         const isActive = idx === physicalStageIdx;
         const isHovered = idx === hoveredNodeIndexRef.current;
@@ -467,9 +473,17 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const isTransitioning = expProgress > 0.04 && expProgress < 0.94;
         const glitchIntensity = isTransitioning ? Math.sin(expProgress * Math.PI) : 0;
         
-        // Jitter displacements
-        const glitchShiftX = isTransitioning ? (Math.sin(tick * 1.8 + idx * 4) * 4.5 * glitchIntensity) : 0;
-        const glitchShiftY = isTransitioning && (tick + idx) % 2 === 0 ? (Math.cos(tick * 1.4 + idx) * 3.0 * glitchIntensity) : 0;
+        // Depth-based Disappearance Glitch Intensity (rises when disappearing at far distance or near camera pass)
+        const isFarDisappearing = proj.relZ > 1600;
+        const isNearDisappearing = proj.relZ < 130;
+        const depthGlitchIntensity = isFarDisappearing
+          ? Math.pow((proj.relZ - 1600) / 850, 1.35)
+          : isNearDisappearing
+          ? Math.pow((130 - proj.relZ) / 112, 1.35)
+          : 0;
+
+        const totalOrbGlitch = Math.min(1.0, glitchIntensity + depthGlitchIntensity);
+        const isOrbGlitching = totalOrbGlitch > 0.05;
 
         const baseRadius = (9 + 4 * expProgress) * proj.scale;
 
@@ -482,15 +496,16 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           closestNodeIdx = idx;
         }
 
-        // Drop stalk beam
+        // Drop stalk beam (with glitchy jitter on disappearance)
         const roadProj = project3D(laneX, ROAD_HEIGHT, stageZ, width, height);
         if (roadProj) {
-          ctx.strokeStyle = evt.accentColor;
-          ctx.lineWidth = Math.max(1, 1.2 * proj.scale);
-          ctx.globalAlpha = 0.35 * Math.min(1, proj.scale * 1.5);
+          const beamJitterX = isOrbGlitching ? (Math.sin(tick * 2.8 + idx * 3.5) * 8.0) * totalOrbGlitch : 0;
+          ctx.strokeStyle = isOrbGlitching && totalOrbGlitch > 0.25 && tick % 2 === 0 ? '#00F0FF' : evt.accentColor;
+          ctx.lineWidth = Math.max(1, (1.2 + (totalOrbGlitch > 0.2 ? 1.0 : 0)) * proj.scale);
+          ctx.globalAlpha = 0.35 * Math.min(1, proj.scale * 1.5) * visibilityAlpha;
           ctx.beginPath();
-          ctx.moveTo(proj.x, proj.y);
-          ctx.lineTo(roadProj.x, roadProj.y);
+          ctx.moveTo(proj.x + beamJitterX, proj.y);
+          ctx.lineTo(roadProj.x - beamJitterX, roadProj.y);
           ctx.stroke();
 
           ctx.beginPath();
@@ -499,17 +514,32 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           ctx.globalAlpha = 1.0;
         }
 
-        // Orb energy ring
+        // Orb energy ring (with chromatic ghost ring split on disappearance)
         const pulse = (Math.sin(tick * 0.08 + idx) + 1) * 0.5;
         const ringRadius = baseRadius * (1.3 + pulse * 0.4);
 
-        ctx.strokeStyle = isTransitioning ? (Math.random() > 0.5 ? '#00F0FF' : '#FF0055') : evt.accentColor;
-        ctx.lineWidth = Math.max(1, (isTransitioning ? 2.4 : 1.8) * proj.scale);
-        ctx.shadowColor = isTransitioning ? '#00F0FF' : evt.accentColor;
+        ctx.globalAlpha = visibilityAlpha;
+        ctx.strokeStyle = isOrbGlitching ? (Math.random() > 0.5 ? '#00F0FF' : '#FF0055') : evt.accentColor;
+        ctx.lineWidth = Math.max(1, (isOrbGlitching ? 2.4 : 1.8) * proj.scale);
+        ctx.shadowColor = isOrbGlitching ? '#00F0FF' : evt.accentColor;
         ctx.shadowBlur = (10 + 10 * expProgress) * proj.scale;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, ringRadius, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Chromatic split ring when glitching / disappearing
+        if (isOrbGlitching && totalOrbGlitch > 0.12) {
+          const ringGhostX = (Math.sin(tick * 3.2 + idx * 2) * 5) * totalOrbGlitch;
+          ctx.strokeStyle = '#00F0FF';
+          ctx.beginPath();
+          ctx.arc(proj.x - ringGhostX, proj.y, ringRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#FF0055';
+          ctx.beginPath();
+          ctx.arc(proj.x + ringGhostX, proj.y, ringRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
         ctx.shadowBlur = 0;
 
         // Core Sphere
@@ -518,7 +548,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           proj.x, proj.y, baseRadius
         );
         orbGrad.addColorStop(0, '#FFFFFF');
-        orbGrad.addColorStop(0.3, isTransitioning ? '#00F0FF' : evt.accentColor);
+        orbGrad.addColorStop(0.3, isOrbGlitching ? (tick % 2 === 0 ? '#00F0FF' : '#FF5FCF') : evt.accentColor);
         orbGrad.addColorStop(1, '#020105');
 
         ctx.fillStyle = orbGrad;
@@ -526,22 +556,44 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         ctx.arc(proj.x, proj.y, baseRadius, 0, Math.PI * 2);
         ctx.fill();
 
+        // Digital pixel static bursts around orb when disappearing
+        if (isOrbGlitching && totalOrbGlitch > 0.2) {
+          ctx.fillStyle = tick % 2 === 0 ? '#00F0FF' : '#FF5FCF';
+          for (let k = 0; k < 4; k++) {
+            const px = proj.x + (Math.sin(tick * 4 + k * 1.7 + idx) * 16) * totalOrbGlitch;
+            const py = proj.y + (Math.cos(tick * 3.5 + k * 2.1 + idx) * 14) * totalOrbGlitch;
+            ctx.fillRect(px, py, Math.max(1.5, 2.5 * proj.scale), Math.max(1.5, 2.5 * proj.scale));
+          }
+        }
+
         // =========================================================================
-        // PROMINENT SPIDER-MAN ITSV GLITCH CARD (SHARP, SPACIOUS & LAPTOP-OPTIMIZED)
+        // PROMINENT SPIDER-MAN ITSV GLITCH CARD (WITH DISAPPEARANCE GLITCH TRANSITION)
         // =========================================================================
-        if (proj.scale > 0.30) {
+        if (proj.scale > 0.16) {
           const isExpanded = expProgress > 0.40;
           const canonicalW = 165 + 105 * expProgress;
           const canonicalH = 55 + 145 * expProgress;
           const canonicalHeaderH = 15 + 13 * expProgress; // Slim, proportional 28px header
           const canonicalBodyH = canonicalH - canonicalHeaderH;
 
+          // Scale cutoff glitch factor (ramps up when card is shrinking towards disappearance threshold 0.16)
+          const scaleGlitch = proj.scale < 0.34 ? (0.34 - proj.scale) / 0.18 : 0;
+          const totalCardGlitch = Math.min(1.0, glitchIntensity + depthGlitchIntensity + scaleGlitch * 0.85);
+          const cardIsGlitching = totalCardGlitch > 0.04;
+
+          const cardFadeAlpha = visibilityAlpha * Math.min(1, (proj.scale - 0.16) / 0.08);
+          ctx.globalAlpha = cardFadeAlpha;
+
+          // Jitter displacements
+          const cardGlitchShiftX = cardIsGlitching ? (Math.sin(tick * 2.2 + idx * 4) * 6.5 * totalCardGlitch) : 0;
+          const cardGlitchShiftY = cardIsGlitching && (tick + idx) % 2 === 0 ? (Math.cos(tick * 1.7 + idx) * 4.5 * totalCardGlitch) : 0;
+
           // STEP A: ITSV TRI-COLOR CHROMATIC GHOST SILHOUETTES
-          if (isTransitioning) {
+          if (cardIsGlitching) {
             const cmykColors = [
-              { col: 'rgba(0, 240, 255, 0.75)', ox: -5.0 * glitchIntensity, oy: -2.0 * glitchIntensity }, // Cyan
-              { col: 'rgba(255, 0, 85, 0.75)', ox: 5.0 * glitchIntensity, oy: 2.0 * glitchIntensity },   // Miles Magenta
-              { col: 'rgba(255, 226, 121, 0.65)', ox: 0, oy: -4.0 * glitchIntensity }                     // Acid Yellow
+              { col: 'rgba(0, 240, 255, 0.75)', ox: -6.0 * totalCardGlitch, oy: -2.5 * totalCardGlitch }, // Cyan
+              { col: 'rgba(255, 0, 85, 0.75)', ox: 6.0 * totalCardGlitch, oy: 2.5 * totalCardGlitch },   // Miles Magenta
+              { col: 'rgba(255, 226, 121, 0.65)', ox: 0, oy: -5.0 * totalCardGlitch }                     // Acid Yellow
             ];
 
             cmykColors.forEach(ghost => {
@@ -567,7 +619,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
 
           // STEP B: MAIN CARD CONTAINER (GPU Hardware Scaled)
           ctx.save();
-          ctx.translate(proj.x + glitchShiftX, proj.y - baseRadius - 8 * proj.scale + glitchShiftY);
+          ctx.translate(proj.x + cardGlitchShiftX, proj.y - baseRadius - 8 * proj.scale + cardGlitchShiftY);
           ctx.scale(proj.scale, proj.scale);
 
           const cardX = -canonicalW / 2;
@@ -584,7 +636,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           ctx.clip();
 
           // 3. CRT Monitor Gradient Header Bar (Yellow -> Pink -> Purple)
-          if (isTransitioning) {
+          if (cardIsGlitching) {
             const glitchHeaders = ['#FAEB92', '#FF5FCF', '#9929EA', '#00F0FF'];
             ctx.fillStyle = glitchHeaders[Math.floor(Math.random() * glitchHeaders.length)];
           } else {
@@ -612,10 +664,10 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           // Glitch Header Text (Original Silkscreen / Press Start 2P)
           if (isExpanded) {
             ctx.font = 'bold 11px "Silkscreen", "Press Start 2P", monospace';
-            const headerStr = scrambleDuringExpansion(`STAGE ${evt.stageNumber}`, expProgress, tick);
+            const headerStr = scrambleDuringExpansion(`STAGE ${evt.stageNumber}`, totalCardGlitch, tick);
             const headerTextY = cardY + canonicalHeaderH / 2 + 4.0;
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = '#00F0FF';
               ctx.fillText(headerStr, -1.5, headerTextY);
               ctx.fillStyle = '#FF0055';
@@ -628,7 +680,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             ctx.font = 'bold 9.5px "Tahoma", sans-serif';
             ctx.fillStyle = '#0A0314';
             ctx.textAlign = 'left';
-            const codeStr = scrambleDuringExpansion(`CU_${evt.stageCode}`, expProgress, tick);
+            const codeStr = scrambleDuringExpansion(`CU_${evt.stageCode}`, totalCardGlitch, tick);
             ctx.fillText(codeStr, cardX + 6, cardY + 11);
           }
 
@@ -637,21 +689,21 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           ctx.fillRect(cardX, bodyY, canonicalW, canonicalBodyH);
 
           // STEP C: ITSV COMIC HALFTONE & HORIZONTAL BLOCK DISPLACEMENT SLICES
-          if (isTransitioning) {
+          if (cardIsGlitching) {
             const numSlices = 4;
             const sliceH = canonicalBodyH / numSlices;
             for (let s = 0; s < numSlices; s++) {
               if ((s + tick) % 2 === 0) {
                 const sY = bodyY + s * sliceH;
-                const sliceOffsetX = (Math.sin(tick * 3 + s * 5) * 7.5) * glitchIntensity;
-                const sliceColor = s % 3 === 0 ? 'rgba(0, 240, 255, 0.35)' : s % 3 === 1 ? 'rgba(255, 0, 85, 0.35)' : 'rgba(255, 226, 121, 0.35)';
+                const sliceOffsetX = (Math.sin(tick * 3 + s * 5) * 8.5) * totalCardGlitch;
+                const sliceColor = s % 3 === 0 ? 'rgba(0, 240, 255, 0.38)' : s % 3 === 1 ? 'rgba(255, 0, 85, 0.38)' : 'rgba(255, 226, 121, 0.38)';
 
                 ctx.fillStyle = sliceColor;
                 ctx.fillRect(cardX + sliceOffsetX, sY, canonicalW, sliceH - 1);
               }
             }
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
             for (let hx = cardX + 4; hx < cardX + canonicalW - 4; hx += 8) {
               for (let hy = bodyY + 4; hy < bodyY + canonicalBodyH - 4; hy += 8) {
                 if ((hx + hy + tick * 4) % 16 === 0) {
@@ -665,9 +717,9 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           if (isExpanded) {
             // Line 1: Uppercase Title in Silkscreen / Press Start 2P
             ctx.font = 'bold 11px "Silkscreen", "Geist Mono", monospace';
-            const titleStr = scrambleDuringExpansion(evt.title.toUpperCase(), expProgress, tick);
+            const titleStr = scrambleDuringExpansion(evt.title.toUpperCase(), totalCardGlitch, tick);
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = '#00F0FF';
               ctx.fillText(titleStr, -2, bodyY + 24);
               ctx.fillStyle = '#FF0055';
@@ -680,8 +732,8 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             // Line 2: Full Description with Precomputed Zero-Reflow Lines Cache
             ctx.font = '500 10px "Geist Mono", "Silkscreen", monospace';
             const baseLines = precomputedDescRef.current[idx] || [evt.description];
-            const descLines = isTransitioning
-              ? baseLines.map(line => scrambleDuringExpansion(line, expProgress, tick))
+            const descLines = cardIsGlitching
+              ? baseLines.map(line => scrambleDuringExpansion(line, totalCardGlitch, tick))
               : baseLines;
 
             // Generous Vertical Centering between Title & Date
@@ -691,7 +743,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             const lineSpacing = 17.5;
             const startY = availableCenter - ((descLines.length - 1) * lineSpacing) / 2;
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = 'rgba(0, 240, 255, 0.85)';
               descLines.forEach((line, lIdx) => {
                 ctx.fillText(line, -1.5, startY + lIdx * lineSpacing);
@@ -705,9 +757,9 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
 
             // Line 3: Big Bold Golden Timestamp in Silkscreen
             ctx.font = 'bold 11px "Silkscreen", "Geist Mono", monospace';
-            const dateStr = scrambleDuringExpansion(`${evt.date.toUpperCase()}, ${evt.time.split(' ')[0]} ${evt.time.split(' ')[1] || ''}`, expProgress, tick);
+            const dateStr = scrambleDuringExpansion(`${evt.date.toUpperCase()}, ${evt.time.split(' ')[0]} ${evt.time.split(' ')[1] || ''}`, totalCardGlitch, tick);
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = '#FF0055';
               ctx.fillText(dateStr, 1.5, bodyY + canonicalBodyH - 14);
             }
@@ -717,9 +769,9 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             // Compact Body
             ctx.font = 'bold 10px "Geist Mono", monospace';
             const shortTitle = evt.title.length > 18 ? evt.title.substring(0, 16) + '..' : evt.title;
-            const scrambledShort = scrambleDuringExpansion(shortTitle, expProgress, tick);
+            const scrambledShort = scrambleDuringExpansion(shortTitle, totalCardGlitch, tick);
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = '#00F0FF';
               ctx.fillText(scrambledShort, cardX + 5.5, bodyY + 15);
             }
@@ -731,18 +783,18 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             ctx.font = '8.5px "Geist Mono", monospace';
             const timeTag = evt.time.split(' ')[0] + ' ' + (evt.time.split(' ')[1] || '');
             const compactDateTime = `${evt.dateShort} • ${timeTag}`;
-            const scrambledDate = scrambleDuringExpansion(compactDateTime, expProgress, tick);
+            const scrambledDate = scrambleDuringExpansion(compactDateTime, totalCardGlitch, tick);
 
-            if (isTransitioning) {
+            if (cardIsGlitching) {
               ctx.fillStyle = '#FF0055';
               ctx.fillText(scrambledDate, cardX + 5.5, bodyY + 26);
             }
-            ctx.fillStyle = isTransitioning ? '#FFE279' : evt.accentColor;
+            ctx.fillStyle = cardIsGlitching ? '#FFE279' : evt.accentColor;
             ctx.fillText(scrambledDate, cardX + 7, bodyY + 26);
           }
 
           // STEP E: ELECTRIC MULTI-COLOR JAGGED ITSV BORDER
-          if (isTransitioning) {
+          if (cardIsGlitching) {
             const borderPalette = ['#00F0FF', '#FF0055', '#FFE279'];
             ctx.strokeStyle = borderPalette[tick % borderPalette.length];
             ctx.lineWidth = 2.4;
@@ -760,6 +812,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           ctx.shadowBlur = 0;
 
           ctx.restore();
+          ctx.globalAlpha = 1.0;
         }
       });
 
