@@ -32,10 +32,10 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Exact Physical Highway Constants (Expansive Spacing & Balanced Perspective)
-  const STAGE_SPACING = 460;
-  const CAMERA_VIEW_DISTANCE = 460;
+  const STAGE_SPACING = 580;
+  const CAMERA_VIEW_DISTANCE = 540;
   const FOCAL_LENGTH = 450;
-  const EXTRA_RUNWAY = 520; // Natural extra distance so scroll continues smoothly past the final card
+  const EXTRA_RUNWAY = 600; // Natural extra distance so scroll continues smoothly past the final card
   const TOTAL_DEPTH = (TIMELINE_EVENTS.length - 1) * STAGE_SPACING + EXTRA_RUNWAY;
   const HORIZON_Y = 0.40;
   const ROAD_HEIGHT = 160;
