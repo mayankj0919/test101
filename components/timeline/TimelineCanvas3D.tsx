@@ -570,17 +570,21 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           ctx.rect(cardX, cardY, canonicalW, canonicalH);
           ctx.clip();
 
-          // 3. Classic Blue Header Bar (Slimmer & Proportional)
+          // 3. CRT Monitor Gradient Header Bar (Yellow -> Pink -> Purple)
           if (isTransitioning) {
-            const glitchHeaders = ['#0055EA', '#FF0055', '#00F0FF', '#9929EA'];
+            const glitchHeaders = ['#FAEB92', '#FF5FCF', '#9929EA', '#00F0FF'];
             ctx.fillStyle = glitchHeaders[Math.floor(Math.random() * glitchHeaders.length)];
           } else {
-            ctx.fillStyle = '#0055EA';
+            const headerGrad = ctx.createLinearGradient(cardX, cardY, cardX + canonicalW, cardY);
+            headerGrad.addColorStop(0, '#FAEB92');    // Lemon / Yellow (top of CRT)
+            headerGrad.addColorStop(0.48, '#FF5FCF'); // Neon Pink (mid of CRT)
+            headerGrad.addColorStop(1, '#9929EA');    // Purple / Violet (bottom of CRT)
+            ctx.fillStyle = headerGrad;
           }
           ctx.fillRect(cardX, cardY, canonicalW, canonicalHeaderH);
 
           // Header Gloss Highlight
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.20)';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
           ctx.fillRect(cardX, cardY, canonicalW, canonicalHeaderH * 0.38);
 
           // Sleek Dark Red Rectangle Block (Shifted left from right border)
@@ -604,12 +608,12 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
               ctx.fillStyle = '#FF0055';
               ctx.fillText(headerStr, 1.5, headerTextY);
             }
-            ctx.fillStyle = '#FFFFFF';
+            ctx.fillStyle = '#0A0314';
             ctx.textAlign = 'center';
             ctx.fillText(headerStr, 0, headerTextY);
           } else {
             ctx.font = 'bold 9.5px "Tahoma", sans-serif';
-            ctx.fillStyle = '#FFFFFF';
+            ctx.fillStyle = '#0A0314';
             ctx.textAlign = 'left';
             const codeStr = scrambleDuringExpansion(`CU_${evt.stageCode}`, expProgress, tick);
             ctx.fillText(codeStr, cardX + 6, cardY + 11);
