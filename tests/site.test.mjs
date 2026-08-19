@@ -88,7 +88,11 @@ test("adds layered CRT glitches with reduced-motion support", async () => {
   assert.match(hero, /styles\.glitchBands/);
   assert.match(hero, /styles\.glitchNoise/);
   assert.match(hero, /styles\.signalLoss/);
-  assert.match(hero, /data-text=\{"MAKE\\nIT REAL"\}/);
+  assert.match(hero, /data-text=\{"CODEUTSAVA\\nX\.O"\}/);
+  assert.match(hero, /styles\.editionTen/);
+  assert.match(hero, /styles\.editionDas/);
+  assert.match(styles, /@keyframes editionTen/);
+  assert.match(styles, /@keyframes editionDas/);
   assert.match(styles, /@keyframes headlineGlitchTop/);
   assert.match(styles, /@keyframes glitchBand/);
   assert.match(styles, /@keyframes screenCrash/);
