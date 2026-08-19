@@ -1,0 +1,788 @@
+'use client';
+
+import React, { useRef, useEffect, useState } from 'react';
+import { TimelineEvent, TIMELINE_EVENTS } from '@/data/timelineEvents';
+import { retroAudio } from '@/utils/audioEffects';
+
+interface TimelineCanvas3DProps {
+  activeEventIndex: number;
+  onSelectEvent: (index: number) => void;
+  onOpenDialog: (event: TimelineEvent) => void;
+  scrollProgress: number;
+  setScrollProgress: (progress: number) => void;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  z: number;
+  size: number;
+  color: string;
+  speed: number;
+  alpha: number;
+}
+
+export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
+  activeEventIndex,
+  onSelectEvent,
+  onOpenDialog,
+  scrollProgress
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Exact Physical Highway Constants (Expansive Spacing & Balanced Perspective)
+  const STAGE_SPACING = 460;
+  const CAMERA_VIEW_DISTANCE = 460;
+  const FOCAL_LENGTH = 450;
+  const EXTRA_RUNWAY = 520; // Natural extra distance so scroll continues smoothly past the final card
+  const TOTAL_DEPTH = (TIMELINE_EVENTS.length - 1) * STAGE_SPACING + EXTRA_RUNWAY;
+  const HORIZON_Y = 0.40;
+  const ROAD_HEIGHT = 160;
+
+  // Camera & Mouse tracking
+  const cameraZRef = useRef(-CAMERA_VIEW_DISTANCE);
+  const targetZRef = useRef(-CAMERA_VIEW_DISTANCE);
+  const mousePosRef = useRef({ x: 0, y: 0 });
+  const mousePixelRef = useRef({ x: -1000, y: -1000 });
+  const hoveredNodeIndexRef = useRef<number | null>(null);
+  const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
+
+  // Smooth Scroll-Activated Expansion Progress
+  const expansionProgressRef = useRef<number[]>(new Array(TIMELINE_EVENTS.length).fill(0));
+  const activeEventIndexRef = useRef<number>(activeEventIndex);
+  const prevReportedStageRef = useRef<number>(activeEventIndex);
+
+  const onSelectEventRef = useRef(onSelectEvent);
+  useEffect(() => {
+    onSelectEventRef.current = onSelectEvent;
+  }, [onSelectEvent]);
+
+  const onOpenDialogRef = useRef(onOpenDialog);
+  useEffect(() => {
+    onOpenDialogRef.current = onOpenDialog;
+  }, [onOpenDialog]);
+
+  useEffect(() => {
+    activeEventIndexRef.current = activeEventIndex;
+  }, [activeEventIndex]);
+
+  // Generate ambient particle cloud (Optimized particle count with frustum culling)
+  const particlesRef = useRef<Particle[]>([]);
+
+  useEffect(() => {
+    const pts: Particle[] = [];
+    const colors = ['#FF5FCF', '#9929EA', '#C084FC', '#E879F9', '#FFE279', '#00F0FF', '#FFFFFF'];
+    const totalDepth = TIMELINE_EVENTS.length * STAGE_SPACING + 1000;
+    for (let i = 0; i < 260; i++) {
+      pts.push({
+        x: (Math.random() - 0.5) * 1400,
+        y: ROAD_HEIGHT + (Math.random() - 0.5) * 220,
+        z: -300 + Math.random() * totalDepth,
+        size: Math.random() * 2.0 + 0.5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speed: (Math.random() * 0.2 + 0.05),
+        alpha: Math.random() * 0.70 + 0.2
+      });
+    }
+    particlesRef.current = pts;
+  }, [STAGE_SPACING]);
+
+  // Pure 1-to-1 Continuous Linear Camera Glide (No freezing, no frame locking)
+  useEffect(() => {
+    targetZRef.current = scrollProgress * TOTAL_DEPTH - CAMERA_VIEW_DISTANCE;
+  }, [scrollProgress, TOTAL_DEPTH, CAMERA_VIEW_DISTANCE]);
+
+  // Spider-Verse Multiverse Glitch Glyphs
+  const ITSV_GLYPHS = ['0', '1', 'X', 'Ø', '§', '¶', '▓', '▒', '░', '<', '>', '#', '%', '$', '!', '&', '?', '¥', '∆', '⚡', '★', '⌘', '¿', '¡'];
+  const scrambleDuringExpansion = (text: string, progress: number, tick: number): string => {
+    if (progress <= 0.04 || progress >= 0.94) return text;
+    const chars = text.split('');
+    const decodedCount = Math.floor(chars.length * Math.pow(progress, 1.4));
+    const seed = Math.floor(tick / 2);
+    return chars
+      .map((ch, i) => {
+        if (ch === ' ' || ch === '\n') return ch;
+        if (i < decodedCount) return ch;
+        const glyphIdx = (i * 7 + seed) % ITSV_GLYPHS.length;
+        return ITSV_GLYPHS[glyphIdx];
+      })
+      .join('');
+  };
+
+  // Precomputed Wrapped Text Lines Cache (Zero MeasureText on 60fps Animation Loop)
+  const precomputedDescRef = useRef<string[][]>([]);
+
+  // Render & Animation Loop (with IntersectionObserver lifecycle pause)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let isVisible = true;
+
+    const computeWrappedDescriptions = (context: CanvasRenderingContext2D, maxWidth: number) => {
+      context.font = '500 10px "Geist Mono", "Silkscreen", monospace';
+      precomputedDescRef.current = TIMELINE_EVENTS.map(evt => {
+        const words = evt.description.split(' ');
+        const lines: string[] = [];
+        let currentLine = words[0] || '';
+        for (let i = 1; i < words.length; i++) {
+          const word = words[i];
+          const testLine = currentLine + ' ' + word;
+          const metrics = context.measureText(testLine);
+          if (metrics.width < maxWidth) {
+            currentLine = testLine;
+          } else {
+            lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      });
+    };
+
+    // Pixel-Perfect HiDPI Resize Handler (Eliminates all blurriness on laptops/monitors)
+    const resize = () => {
+      if (!containerRef.current || !canvas) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+      
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Precalculate text wrapping for canonical width (canonicalW = 270 - 28 = 242)
+      computeWrappedDescriptions(ctx, 242);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // IntersectionObserver: Completely pauses rAF loop when off-screen to save 100% GPU/CPU
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const wasVisible = isVisible;
+        isVisible = entry.isIntersecting;
+        if (isVisible && !wasVisible) {
+          animationFrameId = requestAnimationFrame(render);
+        } else if (!isVisible && wasVisible) {
+          cancelAnimationFrame(animationFrameId);
+        }
+      },
+      { threshold: 0.01 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    // 3D Projection Helper (Optimized inline bounds)
+    const project3D = (
+      x: number, 
+      y: number, 
+      z: number, 
+      width: number, 
+      height: number
+    ) => {
+      const relZ = z - cameraZRef.current;
+      if (relZ <= 10 || relZ > 2300) return null;
+
+      const scale = FOCAL_LENGTH / relZ;
+      const cx = width / 2 + mousePosRef.current.x * 20 * (1 - relZ / 2500);
+      const cy = height * HORIZON_Y + mousePosRef.current.y * 12 * (1 - relZ / 2500);
+
+      const px = cx + x * scale;
+      const py = cy + y * scale;
+
+      return { x: px, y: py, scale, relZ };
+    };
+
+    // Text Wrapping Helper in Canonical Pixel Units
+    const wrapText = (text: string, maxWidth: number): string[] => {
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = words[0] || '';
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine + ' ' + word;
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width < maxWidth) {
+          currentLine = testLine;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    };
+
+    let tick = 0;
+
+    const render = () => {
+      tick++;
+      if (!canvas || !containerRef.current) return;
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+
+      // Balanced Widescreen Road Dimensions
+      const roadWidth = Math.max(520, Math.min(760, width * 0.48));
+      const laneOffset = roadWidth / 3;
+
+      // Smooth camera interpolation for cinematic feel
+      cameraZRef.current += (targetZRef.current - cameraZRef.current) * 0.085;
+
+      // =========================================================================
+      // REAL-TIME PHYSICAL LINE-CROSSING STAGE DETECTION
+      // =========================================================================
+      const physicalStageIdx = Math.max(0, Math.min(
+        TIMELINE_EVENTS.length - 1,
+        Math.floor((cameraZRef.current + CAMERA_VIEW_DISTANCE + STAGE_SPACING * 0.08) / STAGE_SPACING)
+      ));
+
+      if (physicalStageIdx !== prevReportedStageRef.current) {
+        prevReportedStageRef.current = physicalStageIdx;
+        retroAudio.playStageChime(physicalStageIdx);
+        if (onSelectEventRef.current) {
+          onSelectEventRef.current(physicalStageIdx);
+        }
+      }
+
+      // 1. Dark Retro Void Background with Ultra-Subtle Deep Purple Whisper
+      const bgGrad = ctx.createRadialGradient(
+        width / 2, height * HORIZON_Y, 20,
+        width / 2, height * HORIZON_Y, Math.max(width, height) * 0.80
+      );
+      bgGrad.addColorStop(0, '#07020C');     // Barely-there subtle deep purple center
+      bgGrad.addColorStop(0.40, '#040107');  // Deep retro void
+      bgGrad.addColorStop(1, '#020104');     // Obsidian black
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Draw Ambient 3D Particle Cloud
+      const pts = particlesRef.current;
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        const wobbleY = p.y + Math.sin(tick * 0.02 + i) * 6;
+        const wobbleX = p.x + Math.cos(tick * 0.015 + i) * 4;
+        const proj = project3D(wobbleX, wobbleY, p.z, width, height);
+
+        if (proj && proj.relZ > 20 && proj.relZ < 2400) {
+          const r = Math.max(0.5, p.size * proj.scale);
+          const alpha = p.alpha * Math.min(1, (2400 - proj.relZ) / 800) * Math.min(1, (proj.relZ - 20) / 100);
+
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1.0;
+
+      // 3. Draw 3D Perspective Road
+      const laneDividers = [
+        { x: -roadWidth / 2, color: 'rgba(255, 95, 207, 0.55)', width: 2.0, glow: 'rgba(255, 95, 207, 0.3)' },
+        { x: -roadWidth / 6, color: 'rgba(255, 95, 207, 0.25)', width: 1.0, glow: 'none' },
+        { x: roadWidth / 6, color: 'rgba(153, 41, 234, 0.25)', width: 1.0, glow: 'none' },
+        { x: roadWidth / 2, color: 'rgba(153, 41, 234, 0.55)', width: 2.0, glow: 'rgba(153, 41, 234, 0.3)' }
+      ];
+
+      const zStart = cameraZRef.current - 150;
+      const zEnd = cameraZRef.current + 2400;
+
+      // Road Surface
+      const p1 = project3D(-roadWidth / 2, ROAD_HEIGHT, zStart, width, height);
+      const p2 = project3D(roadWidth / 2, ROAD_HEIGHT, zStart, width, height);
+      const p3 = project3D(roadWidth / 2, ROAD_HEIGHT, zEnd, width, height);
+      const p4 = project3D(-roadWidth / 2, ROAD_HEIGHT, zEnd, width, height);
+
+      if (p1 && p2 && p3 && p4) {
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+
+        const roadGrad = ctx.createLinearGradient(0, p1.y, 0, p3.y);
+        roadGrad.addColorStop(0, 'rgba(25, 12, 40, 0.40)');
+        roadGrad.addColorStop(0.5, 'rgba(12, 6, 22, 0.20)');
+        roadGrad.addColorStop(1, 'rgba(2, 1, 4, 0.02)');
+        ctx.fillStyle = roadGrad;
+        ctx.fill();
+      }
+
+      // Draw Longitudinal Lane Lines
+      for (const line of laneDividers) {
+        const pNear = project3D(line.x, ROAD_HEIGHT, zStart, width, height);
+        const pFar = project3D(line.x, ROAD_HEIGHT, zEnd, width, height);
+
+        if (pNear && pFar) {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.width;
+          if (line.glow !== 'none') {
+            ctx.shadowColor = line.glow;
+            ctx.shadowBlur = 5;
+          }
+          ctx.beginPath();
+          ctx.moveTo(pNear.x, pNear.y);
+          ctx.lineTo(pFar.x, pFar.y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // 4. Draw Transverse Horizontal Time Rung Bars
+      TIMELINE_EVENTS.forEach((evt, idx) => {
+        const stageZ = idx * STAGE_SPACING;
+        const pLeft = project3D(-roadWidth / 2 - 30, ROAD_HEIGHT, stageZ, width, height);
+        const pRight = project3D(roadWidth / 2 + 30, ROAD_HEIGHT, stageZ, width, height);
+
+        if (pLeft && pRight) {
+          const isActive = idx === physicalStageIdx;
+          const isHovered = idx === hoveredNodeIndexRef.current;
+          
+          ctx.strokeStyle = isActive ? '#FFE279' : isHovered ? '#00F0FF' : 'rgba(255, 255, 255, 0.16)';
+          ctx.lineWidth = isActive ? 2.4 : 1.0;
+          if (isActive) {
+            ctx.shadowColor = '#FFE279';
+            ctx.shadowBlur = 8;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(pLeft.x, pLeft.y);
+          ctx.lineTo(pRight.x, pRight.y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Date Ticker
+          if (pLeft.scale > 0.35) {
+            ctx.font = `${Math.max(9, Math.round(11 * pLeft.scale))}px "Geist Mono", monospace`;
+            ctx.fillStyle = isActive ? '#FFE279' : 'rgba(255, 255, 255, 0.50)';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${evt.dateShort}`, pLeft.x - 12 * pLeft.scale, pLeft.y + 4 * pLeft.scale);
+          }
+        }
+      });
+
+      // 5. PAINTER'S ALGORITHM: SORT STAGES FROM FURTHEST TO CLOSEST
+      const sortedStageIndices = TIMELINE_EVENTS.map((_, i) => i).sort((a, b) => {
+        const zDistA = a * STAGE_SPACING - cameraZRef.current;
+        const zDistB = b * STAGE_SPACING - cameraZRef.current;
+        return zDistB - zDistA;
+      });
+
+      let closestNodeIdx: number | null = null;
+      let minDistanceToMouse = 55;
+
+      sortedStageIndices.forEach((idx) => {
+        const evt = TIMELINE_EVENTS[idx];
+        const stageZ = idx * STAGE_SPACING;
+        
+        let laneX = 0;
+        if (evt.lane === 'left') laneX = -laneOffset;
+        else if (evt.lane === 'right') laneX = laneOffset;
+        else laneX = 0;
+
+        const floatY = ROAD_HEIGHT - 34 + Math.sin(tick * 0.04 + idx * 1.5) * 7;
+        const proj = project3D(laneX, floatY, stageZ, width, height);
+
+        if (!proj || proj.relZ <= 15 || proj.relZ > 2300) return;
+
+        const isActive = idx === physicalStageIdx;
+        const isHovered = idx === hoveredNodeIndexRef.current;
+        const isTargetActive = isActive || isHovered;
+
+        // Smooth scroll-activated expansion progress
+        const currentProg = expansionProgressRef.current[idx];
+        const targetProg = isTargetActive ? 1.0 : 0.0;
+        expansionProgressRef.current[idx] += (targetProg - currentProg) * 0.16;
+        const expProgress = expansionProgressRef.current[idx];
+
+        // ITSV Glitch Intensity
+        const isTransitioning = expProgress > 0.04 && expProgress < 0.94;
+        const glitchIntensity = isTransitioning ? Math.sin(expProgress * Math.PI) : 0;
+        
+        // Jitter displacements
+        const glitchShiftX = isTransitioning ? (Math.sin(tick * 1.8 + idx * 4) * 4.5 * glitchIntensity) : 0;
+        const glitchShiftY = isTransitioning && (tick + idx) % 2 === 0 ? (Math.cos(tick * 1.4 + idx) * 3.0 * glitchIntensity) : 0;
+
+        const baseRadius = (9 + 4 * expProgress) * proj.scale;
+
+        // Pixel-accurate mouse hover detection
+        const dx = mousePixelRef.current.x - proj.x;
+        const dy = mousePixelRef.current.y - proj.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < baseRadius + 30 && (!closestNodeIdx || dist < minDistanceToMouse)) {
+          closestNodeIdx = idx;
+        }
+
+        // Drop stalk beam
+        const roadProj = project3D(laneX, ROAD_HEIGHT, stageZ, width, height);
+        if (roadProj) {
+          ctx.strokeStyle = evt.accentColor;
+          ctx.lineWidth = Math.max(1, 1.2 * proj.scale);
+          ctx.globalAlpha = 0.35 * Math.min(1, proj.scale * 1.5);
+          ctx.beginPath();
+          ctx.moveTo(proj.x, proj.y);
+          ctx.lineTo(roadProj.x, roadProj.y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.ellipse(roadProj.x, roadProj.y, 18 * proj.scale, 6 * proj.scale, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+        }
+
+        // Orb energy ring
+        const pulse = (Math.sin(tick * 0.08 + idx) + 1) * 0.5;
+        const ringRadius = baseRadius * (1.3 + pulse * 0.4);
+
+        ctx.strokeStyle = isTransitioning ? (Math.random() > 0.5 ? '#00F0FF' : '#FF0055') : evt.accentColor;
+        ctx.lineWidth = Math.max(1, (isTransitioning ? 2.4 : 1.8) * proj.scale);
+        ctx.shadowColor = isTransitioning ? '#00F0FF' : evt.accentColor;
+        ctx.shadowBlur = (10 + 10 * expProgress) * proj.scale;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Core Sphere
+        const orbGrad = ctx.createRadialGradient(
+          proj.x - baseRadius * 0.3, proj.y - baseRadius * 0.3, baseRadius * 0.1,
+          proj.x, proj.y, baseRadius
+        );
+        orbGrad.addColorStop(0, '#FFFFFF');
+        orbGrad.addColorStop(0.3, isTransitioning ? '#00F0FF' : evt.accentColor);
+        orbGrad.addColorStop(1, '#020105');
+
+        ctx.fillStyle = orbGrad;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, baseRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // =========================================================================
+        // PROMINENT SPIDER-MAN ITSV GLITCH CARD (SHARP, SPACIOUS & LAPTOP-OPTIMIZED)
+        // =========================================================================
+        if (proj.scale > 0.30) {
+          const isExpanded = expProgress > 0.40;
+          const canonicalW = 165 + 105 * expProgress;
+          const canonicalH = 55 + 145 * expProgress;
+          const canonicalHeaderH = 15 + 13 * expProgress; // Slim, proportional 28px header
+          const canonicalBodyH = canonicalH - canonicalHeaderH;
+
+          // STEP A: ITSV TRI-COLOR CHROMATIC GHOST SILHOUETTES
+          if (isTransitioning) {
+            const cmykColors = [
+              { col: 'rgba(0, 240, 255, 0.75)', ox: -5.0 * glitchIntensity, oy: -2.0 * glitchIntensity }, // Cyan
+              { col: 'rgba(255, 0, 85, 0.75)', ox: 5.0 * glitchIntensity, oy: 2.0 * glitchIntensity },   // Miles Magenta
+              { col: 'rgba(255, 226, 121, 0.65)', ox: 0, oy: -4.0 * glitchIntensity }                     // Acid Yellow
+            ];
+
+            cmykColors.forEach(ghost => {
+              ctx.save();
+              ctx.translate(proj.x + ghost.ox, proj.y - baseRadius - 8 * proj.scale + ghost.oy);
+              ctx.scale(proj.scale, proj.scale);
+
+              const gx = -canonicalW / 2;
+              const gy = -canonicalH;
+              
+              ctx.strokeStyle = ghost.col;
+              ctx.lineWidth = 2.0;
+              ctx.shadowColor = ghost.col;
+              ctx.shadowBlur = 10;
+              ctx.strokeRect(gx, gy, canonicalW, canonicalH);
+
+              ctx.fillStyle = ghost.col.replace('0.75', '0.12').replace('0.65', '0.10');
+              ctx.fillRect(gx, gy, canonicalW, canonicalH);
+
+              ctx.restore();
+            });
+          }
+
+          // STEP B: MAIN CARD CONTAINER (GPU Hardware Scaled)
+          ctx.save();
+          ctx.translate(proj.x + glitchShiftX, proj.y - baseRadius - 8 * proj.scale + glitchShiftY);
+          ctx.scale(proj.scale, proj.scale);
+
+          const cardX = -canonicalW / 2;
+          const cardY = -canonicalH;
+          const bodyY = cardY + canonicalHeaderH;
+
+          // 1. Solid Opaque Foundation
+          ctx.fillStyle = '#020104';
+          ctx.fillRect(cardX - 1, cardY - 1, canonicalW + 2, canonicalH + 2);
+
+          // 2. Strict Rectangular Mask
+          ctx.beginPath();
+          ctx.rect(cardX, cardY, canonicalW, canonicalH);
+          ctx.clip();
+
+          // 3. Classic Blue Header Bar (Slimmer & Proportional)
+          if (isTransitioning) {
+            const glitchHeaders = ['#0055EA', '#FF0055', '#00F0FF', '#9929EA'];
+            ctx.fillStyle = glitchHeaders[Math.floor(Math.random() * glitchHeaders.length)];
+          } else {
+            ctx.fillStyle = '#0055EA';
+          }
+          ctx.fillRect(cardX, cardY, canonicalW, canonicalHeaderH);
+
+          // Header Gloss Highlight
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.20)';
+          ctx.fillRect(cardX, cardY, canonicalW, canonicalHeaderH * 0.38);
+
+          // Sleek Dark Red Rectangle Block (Shifted left from right border)
+          const redW = isExpanded ? 18 : 11;
+          const redH = isExpanded ? 13 : 8;
+          const redX = cardX + canonicalW - redW - (isExpanded ? 8 : 5);
+          const redY = cardY + Math.round((canonicalHeaderH - redH) / 2);
+
+          ctx.fillStyle = '#9E1B1B';
+          ctx.fillRect(redX, redY, redW, redH);
+
+          // Glitch Header Text (Original Silkscreen / Press Start 2P)
+          if (isExpanded) {
+            ctx.font = 'bold 11px "Silkscreen", "Press Start 2P", monospace';
+            const headerStr = scrambleDuringExpansion(`STAGE ${evt.stageNumber}`, expProgress, tick);
+            const headerTextY = cardY + canonicalHeaderH / 2 + 4.0;
+
+            if (isTransitioning) {
+              ctx.fillStyle = '#00F0FF';
+              ctx.fillText(headerStr, -1.5, headerTextY);
+              ctx.fillStyle = '#FF0055';
+              ctx.fillText(headerStr, 1.5, headerTextY);
+            }
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.fillText(headerStr, 0, headerTextY);
+          } else {
+            ctx.font = 'bold 9.5px "Tahoma", sans-serif';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'left';
+            const codeStr = scrambleDuringExpansion(`CU_${evt.stageCode}`, expProgress, tick);
+            ctx.fillText(codeStr, cardX + 6, cardY + 11);
+          }
+
+          // 4. Solid Black Body
+          ctx.fillStyle = '#0A0514';
+          ctx.fillRect(cardX, bodyY, canonicalW, canonicalBodyH);
+
+          // STEP C: ITSV COMIC HALFTONE & HORIZONTAL BLOCK DISPLACEMENT SLICES
+          if (isTransitioning) {
+            const numSlices = 4;
+            const sliceH = canonicalBodyH / numSlices;
+            for (let s = 0; s < numSlices; s++) {
+              if ((s + tick) % 2 === 0) {
+                const sY = bodyY + s * sliceH;
+                const sliceOffsetX = (Math.sin(tick * 3 + s * 5) * 7.5) * glitchIntensity;
+                const sliceColor = s % 3 === 0 ? 'rgba(0, 240, 255, 0.35)' : s % 3 === 1 ? 'rgba(255, 0, 85, 0.35)' : 'rgba(255, 226, 121, 0.35)';
+
+                ctx.fillStyle = sliceColor;
+                ctx.fillRect(cardX + sliceOffsetX, sY, canonicalW, sliceH - 1);
+              }
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            for (let hx = cardX + 4; hx < cardX + canonicalW - 4; hx += 8) {
+              for (let hy = bodyY + 4; hy < bodyY + canonicalBodyH - 4; hy += 8) {
+                if ((hx + hy + tick * 4) % 16 === 0) {
+                  ctx.fillRect(hx, hy, 2.5, 2.5);
+                }
+              }
+            }
+          }
+
+          // STEP D: BODY CONTENT WITH GENEROUS LINE SPACING & CENTERED ALIGNMENT
+          if (isExpanded) {
+            // Line 1: Uppercase Title in Silkscreen / Press Start 2P
+            ctx.font = 'bold 11px "Silkscreen", "Geist Mono", monospace';
+            const titleStr = scrambleDuringExpansion(evt.title.toUpperCase(), expProgress, tick);
+
+            if (isTransitioning) {
+              ctx.fillStyle = '#00F0FF';
+              ctx.fillText(titleStr, -2, bodyY + 24);
+              ctx.fillStyle = '#FF0055';
+              ctx.fillText(titleStr, 2, bodyY + 24);
+            }
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.fillText(titleStr, 0, bodyY + 24);
+
+            // Line 2: Full Description with Precomputed Zero-Reflow Lines Cache
+            ctx.font = '500 10px "Geist Mono", "Silkscreen", monospace';
+            const baseLines = precomputedDescRef.current[idx] || [evt.description];
+            const descLines = isTransitioning
+              ? baseLines.map(line => scrambleDuringExpansion(line, expProgress, tick))
+              : baseLines;
+
+            // Generous Vertical Centering between Title & Date
+            const availableTop = bodyY + 42;
+            const availableBottom = bodyY + canonicalBodyH - 26;
+            const availableCenter = (availableTop + availableBottom) / 2;
+            const lineSpacing = 17.5;
+            const startY = availableCenter - ((descLines.length - 1) * lineSpacing) / 2;
+
+            if (isTransitioning) {
+              ctx.fillStyle = 'rgba(0, 240, 255, 0.85)';
+              descLines.forEach((line, lIdx) => {
+                ctx.fillText(line, -1.5, startY + lIdx * lineSpacing);
+              });
+            }
+
+            ctx.fillStyle = '#FFE279';
+            descLines.forEach((line, lIdx) => {
+              ctx.fillText(line, 0, startY + lIdx * lineSpacing);
+            });
+
+            // Line 3: Big Bold Golden Timestamp in Silkscreen
+            ctx.font = 'bold 11px "Silkscreen", "Geist Mono", monospace';
+            const dateStr = scrambleDuringExpansion(`${evt.date.toUpperCase()}, ${evt.time.split(' ')[0]} ${evt.time.split(' ')[1] || ''}`, expProgress, tick);
+
+            if (isTransitioning) {
+              ctx.fillStyle = '#FF0055';
+              ctx.fillText(dateStr, 1.5, bodyY + canonicalBodyH - 14);
+            }
+            ctx.fillStyle = '#FFE279';
+            ctx.fillText(dateStr, 0, bodyY + canonicalBodyH - 14);
+          } else {
+            // Compact Body
+            ctx.font = 'bold 10px "Geist Mono", monospace';
+            const shortTitle = evt.title.length > 18 ? evt.title.substring(0, 16) + '..' : evt.title;
+            const scrambledShort = scrambleDuringExpansion(shortTitle, expProgress, tick);
+
+            if (isTransitioning) {
+              ctx.fillStyle = '#00F0FF';
+              ctx.fillText(scrambledShort, cardX + 5.5, bodyY + 15);
+            }
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'left';
+            ctx.fillText(scrambledShort, cardX + 7, bodyY + 15);
+
+            // Replaced lane label with Date & Time
+            ctx.font = '8.5px "Geist Mono", monospace';
+            const timeTag = evt.time.split(' ')[0] + ' ' + (evt.time.split(' ')[1] || '');
+            const compactDateTime = `${evt.dateShort} • ${timeTag}`;
+            const scrambledDate = scrambleDuringExpansion(compactDateTime, expProgress, tick);
+
+            if (isTransitioning) {
+              ctx.fillStyle = '#FF0055';
+              ctx.fillText(scrambledDate, cardX + 5.5, bodyY + 26);
+            }
+            ctx.fillStyle = isTransitioning ? '#FFE279' : evt.accentColor;
+            ctx.fillText(scrambledDate, cardX + 7, bodyY + 26);
+          }
+
+          // STEP E: ELECTRIC MULTI-COLOR JAGGED ITSV BORDER
+          if (isTransitioning) {
+            const borderPalette = ['#00F0FF', '#FF0055', '#FFE279'];
+            ctx.strokeStyle = borderPalette[tick % borderPalette.length];
+            ctx.lineWidth = 2.4;
+            ctx.shadowColor = borderPalette[(tick + 1) % borderPalette.length];
+            ctx.shadowBlur = 12;
+          } else {
+            ctx.strokeStyle = isTargetActive ? '#FFE279' : evt.accentColor;
+            ctx.lineWidth = isTargetActive ? 2.0 : 1.2;
+            if (isTargetActive) {
+              ctx.shadowColor = '#FFE279';
+              ctx.shadowBlur = 8;
+            }
+          }
+          ctx.strokeRect(cardX, cardY, canonicalW, canonicalH);
+          ctx.shadowBlur = 0;
+
+          ctx.restore();
+        }
+      });
+
+      // Update hover state
+      if (closestNodeIdx !== hoveredNodeIndexRef.current) {
+        hoveredNodeIndexRef.current = closestNodeIdx;
+        if (closestNodeIdx !== null) {
+          setHoveredEvent(TIMELINE_EVENTS[closestNodeIdx]);
+        } else {
+          setHoveredEvent(null);
+        }
+      }
+
+      if (isVisible) {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', resize);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Mouse move parallax
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+    mousePosRef.current = { x, y };
+    mousePixelRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const handleMouseLeave = () => {
+    mousePixelRef.current = { x: -1000, y: -1000 };
+    setHoveredEvent(null);
+    hoveredNodeIndexRef.current = null;
+  };
+
+  // Canvas Click: Open XP Dialog
+  const handleClick = () => {
+    if (hoveredNodeIndexRef.current !== null) {
+      const selected = TIMELINE_EVENTS[hoveredNodeIndexRef.current];
+      onSelectEvent(hoveredNodeIndexRef.current);
+      onOpenDialog(selected);
+      retroAudio.playXPDing();
+    }
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
+      className="w-full h-full absolute inset-0 cursor-crosshair select-none bg-[#020104]"
+    >
+      <canvas ref={canvasRef} className="w-full h-full block" />
+
+      {/* Hover Tooltip */}
+      {hoveredEvent && (
+        <div 
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/95 backdrop-blur-xl border-2 px-5 py-2.5 rounded-xl shadow-[0_0_30px_rgba(255,95,207,0.4)] flex items-center gap-3 text-xs font-mono pointer-events-none transition-all z-30"
+          style={{ borderColor: hoveredEvent.accentColor }}
+        >
+          <span className="text-white font-bold">{hoveredEvent.stageCode}:</span>
+          <span className="text-gray-200 font-sans font-medium">{hoveredEvent.title}</span>
+          <span className="text-gray-400">({hoveredEvent.date})</span>
+          <span 
+            className="px-2 py-0.5 rounded text-[10px] font-black uppercase"
+            style={{ backgroundColor: `${hoveredEvent.accentColor}30`, color: hoveredEvent.accentColor }}
+          >
+            {hoveredEvent.lane.toUpperCase()} LANE
+          </span>
+          <span className="text-yellow-300 font-bold ml-1 animate-pulse">[ Click to open XP Dialog ]</span>
+        </div>
+      )}
+    </div>
+  );
+};
