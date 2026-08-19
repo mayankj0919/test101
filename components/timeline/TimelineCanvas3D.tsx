@@ -289,18 +289,14 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       }
       ctx.globalAlpha = 1.0;
 
-      // 3. Draw 3D Perspective Road
-      const laneDividers = [
-        { x: -roadWidth / 2, color: 'rgba(255, 95, 207, 0.55)', width: 2.0, glow: 'rgba(255, 95, 207, 0.3)' },
-        { x: -roadWidth / 6, color: 'rgba(255, 95, 207, 0.25)', width: 1.0, glow: 'none' },
-        { x: roadWidth / 6, color: 'rgba(153, 41, 234, 0.25)', width: 1.0, glow: 'none' },
-        { x: roadWidth / 2, color: 'rgba(153, 41, 234, 0.55)', width: 2.0, glow: 'rgba(153, 41, 234, 0.3)' }
-      ];
+      // 3. DRAW 3D PERSPECTIVE DUOCHROME PURPLE PIXEL GRID HIGHWAY (INCLINED ROAD MESH)
+      const numCols = 16;
+      const colWidth = roadWidth / numCols;
+      const rowSpacingZ = 55;
+      const zStart = cameraZRef.current - 120;
+      const zEnd = cameraZRef.current + 2500;
 
-      const zStart = cameraZRef.current - 150;
-      const zEnd = cameraZRef.current + 2400;
-
-      // Road Surface
+      // STEP A: Road Base Trapezoid Surface
       const p1 = project3D(-roadWidth / 2, ROAD_HEIGHT, zStart, width, height);
       const p2 = project3D(roadWidth / 2, ROAD_HEIGHT, zStart, width, height);
       const p3 = project3D(roadWidth / 2, ROAD_HEIGHT, zEnd, width, height);
@@ -314,26 +310,122 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         ctx.lineTo(p4.x, p4.y);
         ctx.closePath();
 
+        // Dark Purple Void Road Gradient
         const roadGrad = ctx.createLinearGradient(0, p1.y, 0, p3.y);
-        roadGrad.addColorStop(0, 'rgba(25, 12, 40, 0.40)');
-        roadGrad.addColorStop(0.5, 'rgba(12, 6, 22, 0.20)');
+        roadGrad.addColorStop(0, 'rgba(30, 4, 56, 0.55)');
+        roadGrad.addColorStop(0.35, 'rgba(18, 2, 34, 0.35)');
+        roadGrad.addColorStop(0.75, 'rgba(8, 1, 16, 0.18)');
         roadGrad.addColorStop(1, 'rgba(2, 1, 4, 0.02)');
         ctx.fillStyle = roadGrad;
         ctx.fill();
       }
 
-      // Draw Longitudinal Lane Lines
-      for (const line of laneDividers) {
-        const pNear = project3D(line.x, ROAD_HEIGHT, zStart, width, height);
-        const pFar = project3D(line.x, ROAD_HEIGHT, zEnd, width, height);
+      // STEP B: Interactive Duochrome Purple Pixel Grid Cells (Hover Reactivity & Cyber Waves)
+      const startZSnap = Math.floor(zStart / rowSpacingZ) * rowSpacingZ;
+      const maxGridRows = 32;
+
+      for (let r = 0; r < maxGridRows; r++) {
+        const rz = startZSnap + r * rowSpacingZ;
+        if (rz < zStart || rz >= zEnd - rowSpacingZ) continue;
+
+        const depthAlpha = Math.max(0, Math.min(1, (zEnd - rz) / (zEnd - zStart)));
+        if (depthAlpha <= 0.02) continue;
+
+        for (let c = 0; c < numCols; c++) {
+          const xLeft = -roadWidth / 2 + c * colWidth;
+          const xRight = xLeft + colWidth;
+          const cellCenterProj = project3D((xLeft + xRight) / 2, ROAD_HEIGHT, rz + rowSpacingZ / 2, width, height);
+          
+          if (!cellCenterProj) continue;
+
+          // Mouse Proximity Glow on 3D Road Plane
+          const dx = mousePixelRef.current.x - cellCenterProj.x;
+          const dy = mousePixelRef.current.y - cellCenterProj.y;
+          const mouseDist = Math.sqrt(dx * dx + dy * dy);
+          const mouseGlow = Math.max(0, 1 - mouseDist / 95);
+
+          // Flowing Cyber Wave Shading
+          const wave = Math.sin((rz * 0.02 - tick * 0.04) + c * 0.5);
+          const isPulseCell = (c + Math.floor(rz / rowSpacingZ)) % 5 === 0 && wave > 0.65;
+
+          if (mouseGlow > 0.05 || isPulseCell) {
+            const cP1 = project3D(xLeft, ROAD_HEIGHT, rz, width, height);
+            const cP2 = project3D(xRight, ROAD_HEIGHT, rz, width, height);
+            const cP3 = project3D(xRight, ROAD_HEIGHT, rz + rowSpacingZ, width, height);
+            const cP4 = project3D(xLeft, ROAD_HEIGHT, rz + rowSpacingZ, width, height);
+
+            if (cP1 && cP2 && cP3 && cP4) {
+              ctx.beginPath();
+              ctx.moveTo(cP1.x, cP1.y);
+              ctx.lineTo(cP2.x, cP2.y);
+              ctx.lineTo(cP3.x, cP3.y);
+              ctx.lineTo(cP4.x, cP4.y);
+              ctx.closePath();
+
+              if (mouseGlow > 0.05) {
+                // Interactive Reactive Duochrome Glow (Pink & Electric Purple)
+                const glowAlpha = (0.08 + mouseGlow * 0.35) * depthAlpha;
+                ctx.fillStyle = mouseGlow > 0.5 
+                  ? `rgba(255, 95, 207, ${glowAlpha})` 
+                  : `rgba(153, 41, 234, ${glowAlpha})`;
+              } else {
+                // Subtle Ambient Wave Cell
+                ctx.fillStyle = `rgba(121, 27, 196, ${0.09 * depthAlpha})`;
+              }
+              ctx.fill();
+            }
+          }
+        }
+      }
+
+      // STEP C: 3D Transversal Grid Rows (Horizontal Lines across Depth Z)
+      for (let r = 0; r < maxGridRows; r++) {
+        const rz = startZSnap + r * rowSpacingZ;
+        if (rz < zStart || rz > zEnd) continue;
+
+        const pL = project3D(-roadWidth / 2, ROAD_HEIGHT, rz, width, height);
+        const pR = project3D(roadWidth / 2, ROAD_HEIGHT, rz, width, height);
+
+        if (pL && pR) {
+          const depthAlpha = Math.max(0, Math.min(1, (zEnd - rz) / (zEnd - zStart)));
+          ctx.strokeStyle = `rgba(153, 41, 234, ${0.32 * depthAlpha})`;
+          ctx.lineWidth = Math.max(0.65, 1.1 * pL.scale);
+          ctx.beginPath();
+          ctx.moveTo(pL.x, pL.y);
+          ctx.lineTo(pR.x, pR.y);
+          ctx.stroke();
+        }
+      }
+
+      // STEP D: 3D Longitudinal Grid Columns (Perspective Depth Lines)
+      for (let c = 0; c <= numCols; c++) {
+        const colX = -roadWidth / 2 + c * colWidth;
+        const pNear = project3D(colX, ROAD_HEIGHT, zStart, width, height);
+        const pFar = project3D(colX, ROAD_HEIGHT, zEnd, width, height);
 
         if (pNear && pFar) {
-          ctx.strokeStyle = line.color;
-          ctx.lineWidth = line.width;
-          if (line.glow !== 'none') {
-            ctx.shadowColor = line.glow;
-            ctx.shadowBlur = 5;
+          const isOuterBorder = c === 0 || c === numCols;
+          const isMainLane = c === 4 || c === 8 || c === 12;
+
+          if (isOuterBorder) {
+            // Glowing Neon Violet Outer Boundary Rails
+            ctx.strokeStyle = '#9929EA';
+            ctx.lineWidth = Math.max(2.0, 2.8 * pNear.scale);
+            ctx.shadowColor = '#FF5FCF';
+            ctx.shadowBlur = 10;
+          } else if (isMainLane) {
+            // Major Lane Separators
+            ctx.strokeStyle = 'rgba(255, 95, 207, 0.45)';
+            ctx.lineWidth = Math.max(1.0, 1.4 * pNear.scale);
+            ctx.shadowColor = 'rgba(255, 95, 207, 0.3)';
+            ctx.shadowBlur = 4;
+          } else {
+            // Fine-pitch Duochrome Purple Grid Subdivisions
+            ctx.strokeStyle = 'rgba(153, 41, 234, 0.24)';
+            ctx.lineWidth = Math.max(0.6, 0.85 * pNear.scale);
+            ctx.shadowBlur = 0;
           }
+
           ctx.beginPath();
           ctx.moveTo(pNear.x, pNear.y);
           ctx.lineTo(pFar.x, pFar.y);
@@ -342,21 +434,21 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         }
       }
 
-      // 4. Draw Transverse Horizontal Time Rung Bars
+      // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones)
       TIMELINE_EVENTS.forEach((evt, idx) => {
         const stageZ = idx * STAGE_SPACING;
-        const pLeft = project3D(-roadWidth / 2 - 30, ROAD_HEIGHT, stageZ, width, height);
-        const pRight = project3D(roadWidth / 2 + 30, ROAD_HEIGHT, stageZ, width, height);
+        const pLeft = project3D(-roadWidth / 2 - 35, ROAD_HEIGHT, stageZ, width, height);
+        const pRight = project3D(roadWidth / 2 + 35, ROAD_HEIGHT, stageZ, width, height);
 
         if (pLeft && pRight) {
           const isActive = idx === physicalStageIdx;
           const isHovered = idx === hoveredNodeIndexRef.current;
           
-          ctx.strokeStyle = isActive ? '#FFE279' : isHovered ? '#00F0FF' : 'rgba(255, 255, 255, 0.16)';
-          ctx.lineWidth = isActive ? 2.4 : 1.0;
+          ctx.strokeStyle = isActive ? '#FFE279' : isHovered ? '#00F0FF' : 'rgba(255, 95, 207, 0.30)';
+          ctx.lineWidth = isActive ? 2.6 : 1.2;
           if (isActive) {
             ctx.shadowColor = '#FFE279';
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 10;
           }
 
           ctx.beginPath();
@@ -374,6 +466,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           }
         }
       });
+
 
       // 5. PAINTER'S ALGORITHM: SORT STAGES FROM FURTHEST TO CLOSEST
       const sortedStageIndices = TIMELINE_EVENTS.map((_, i) => i).sort((a, b) => {
