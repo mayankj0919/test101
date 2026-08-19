@@ -152,12 +152,7 @@ export function GlitchverseHero() {
               CodeUtsava X is the 10th edition of NIT Raipur&apos;s flagship
               technology celebration&mdash;uniting students and developers to build, learn, compete, and reimagine what technology can do.
             </p>
-            <a className={styles.primaryCta} href="https://discord.gg/Ek9gr2Xnqb">
-              <span>JOIN THE COMMUNITY</span>
-              <span className={styles.ctaArrow} aria-hidden="true">
-                ↗
-              </span>
-            </a>
+
           </div>
         </div>
 
