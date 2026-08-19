@@ -1,8 +1,9 @@
-# Codeutsava X.0 — Glitchverse Hero
+# Codeutsava X.0 — Glitchverse Experience
 
-A focused navbar and hero experience built with native Next.js. The centerpiece
-is a CSS-rendered CRT monitor with pointer-responsive tilt, screen parallax, and
-an interactive OriginKit Prism Grid backdrop.
+A responsive event landing experience built with native Next.js. The page pairs
+a CSS-rendered CRT hero with pointer-responsive tilt and an OriginKit Prism Grid,
+an accessible FAQ powered by an OriginKit ASCII Flame, and an animated footer
+featuring OriginKit Pixel Tetris.
 
 ## Run locally
 
@@ -20,8 +21,9 @@ Open [http://localhost:3000](http://localhost:3000).
 - `pnpm lint` checks the app and tests.
 - `pnpm test` builds and verifies the focused page structure.
 
-## Project scope
+## Experience
 
-The page intentionally contains only the navigation and hero. The CRT is built
-from HTML and CSS, while OriginKit's Prism Grid supplies the interactive signal
-field behind it.
+The CRT is built from HTML and CSS, while OriginKit components provide the
+interactive signal field, ASCII fire treatment, and self-playing Tetris footer.
+FAQ controls use native buttons and expose their expanded state to assistive
+technology.

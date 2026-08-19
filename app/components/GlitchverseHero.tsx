@@ -122,7 +122,8 @@ export function GlitchverseHero() {
         <nav className={styles.navLinks} aria-label="Primary navigation">
           <a href="#brief">THE BRIEF</a>
           <a href="#signal">THE SIGNAL</a>
-          <a href="#join">ENTER</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">CONTACT</a>
         </nav>
 
         <a className={styles.navCta} href="#join">
