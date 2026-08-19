@@ -123,13 +123,22 @@ export const TimelineRoad: React.FC = () => {
         {/* 2. TOP FLOATING HUD OVERLAY */}
         <div className="relative z-40 w-full pt-6 px-6 sm:px-10 pointer-events-none flex items-start justify-between">
           
-          {/* Left Headline */}
+          {/* Left Headline (Styled with Build Beyond The Screen Font & Typography) */}
           <div className="pointer-events-auto max-w-xl">
-            <h2 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-white drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-              THE <GlitchText text="TIMELINE" className="text-[#FFE279]" /> TO THE{' '}
+            <h2 
+              className="text-2xl sm:text-4xl lg:text-[44px] uppercase select-none leading-[0.92] tracking-[-0.045em] drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]"
+              style={{ fontFamily: '"Arial Narrow", "Helvetica Neue", Arial, sans-serif', fontWeight: 800 }}
+            >
+              <span className="text-white">THE </span>
+              <GlitchText text="TIMELINE" className="text-[#FAEB92]" />
+              <span className="text-white"> TO THE</span>
+              <br />
               <span 
-                className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5FCF] via-[#9929EA] to-[#FFE279]"
-                style={{ filter: 'drop-shadow(0 0 15px rgba(255,95,207,0.5))' }}
+                className="text-[#FF5FCF] inline-block mt-1"
+                style={{ 
+                  textShadow: '3px 3px 0 #9929EA, 0 0 20px rgba(255,95,207,0.5)',
+                  filter: 'drop-shadow(0 0 15px rgba(255,95,207,0.4))'
+                }}
               >
                 GLITCHVERSE
               </span>
