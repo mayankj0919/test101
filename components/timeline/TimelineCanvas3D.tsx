@@ -453,9 +453,9 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
 
         if (!proj || proj.relZ <= 15 || proj.relZ > 2450) return;
 
-        // Smooth depth visibility & distance fade (smoother near-camera exit)
+        // Smooth depth visibility & distance fade
         const farFade = Math.max(0, Math.min(1, (2450 - proj.relZ) / 750));
-        const nearFade = Math.max(0, Math.min(1, (proj.relZ - 20) / 180));
+        const nearFade = Math.max(0, Math.min(1, (proj.relZ - 18) / 130));
         const visibilityAlpha = farFade * nearFade;
         if (visibilityAlpha <= 0.01) return;
 
@@ -473,13 +473,13 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const isTransitioning = expProgress > 0.04 && expProgress < 0.94;
         const glitchIntensity = isTransitioning ? Math.sin(expProgress * Math.PI) : 0;
         
-        // Depth-based Disappearance Glitch Intensity (triggers earlier at relZ < 360 when getting close to card)
-        const isFarDisappearing = proj.relZ > 1600;
-        const isNearDisappearing = proj.relZ < 360;
+        // Depth-based Disappearance Glitch Intensity (only triggers when almost scrolling out at relZ < 175)
+        const isFarDisappearing = proj.relZ > 1650;
+        const isNearDisappearing = proj.relZ < 175;
         const depthGlitchIntensity = isFarDisappearing
-          ? Math.pow((proj.relZ - 1600) / 850, 1.35)
+          ? Math.pow((proj.relZ - 1650) / 800, 1.35)
           : isNearDisappearing
-          ? Math.pow((360 - proj.relZ) / 330, 1.2)
+          ? Math.pow((175 - proj.relZ) / 155, 1.5)
           : 0;
 
         const totalOrbGlitch = Math.min(1.0, glitchIntensity + depthGlitchIntensity);
