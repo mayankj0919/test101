@@ -31,12 +31,13 @@ test("keeps the redesigned navbar solid and responsive", async () => {
   );
   const navbar = styles.slice(styles.indexOf(".navbar {"), styles.indexOf(".heroGrid {"));
 
-  assert.match(navbar, /border-radius: 18px/);
-  assert.match(navbar, /backdrop-filter: blur\(18px\)/);
-  assert.match(navbar, /\.navLinks \{[\s\S]*?font-family: var\(--font-body\)/);
-  assert.match(navbar, /\.navCta \{[\s\S]*?background: var\(--bone\)/);
-  assert.doesNotMatch(navbar, /color: transparent|-webkit-text-stroke/);
-  assert.match(styles, /@media \(max-width: 760px\) \{[\s\S]*?\.navbar \{[\s\S]*?height: 64px/);
+  assert.match(navbar, /border-block: 1px solid/);
+  assert.match(navbar, /box-shadow:[\s\S]*?inset 4px 0 0 var\(--lime\)/);
+  assert.match(navbar, /\.navLinks a \+ a \{[\s\S]*?border-left/);
+  assert.match(navbar, /\.navCta \{[\s\S]*?background: var\(--lime\)/);
+  assert.match(navbar, /clip-path: polygon/);
+  assert.doesNotMatch(navbar, /color: transparent|-webkit-text-stroke|backdrop-filter/);
+  assert.match(styles, /@media \(max-width: 760px\) \{[\s\S]*?\.navbar \{[\s\S]*?height: 66px/);
 });
 
 test("uses native Next.js without Vite", async () => {
