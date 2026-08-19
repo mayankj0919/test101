@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GlitchverseHero } from "./components/GlitchverseHero";
+import { GlitchverseSections } from "./components/GlitchverseSections";
 
 export const metadata: Metadata = {
   title: "Codeutsava X.0 — Build Beyond the Screen",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <GlitchverseHero />;
+  return (
+    <>
+      <GlitchverseHero />
+      <GlitchverseSections />
+    </>
+  );
 }

@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("keeps the experience focused on the requested navbar and hero", async () => {
-  const hero = await readFile(
-    new URL("../app/components/GlitchverseHero.tsx", import.meta.url),
-    "utf8",
-  );
+test("includes the navbar, hero, FAQ, and footer experience", async () => {
+  const [hero, sections, page] = await Promise.all([
+    readFile(new URL("../app/components/GlitchverseHero.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/GlitchverseSections.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
 
   assert.match(hero, /<header className=\{styles\.navbar\}>/);
   assert.match(hero, /BUILD/);
@@ -16,7 +17,11 @@ test("keeps the experience focused on the requested navbar and hero", async () =
   assert.match(hero, /window\.addEventListener\("pointermove", moveMonitor/);
   assert.match(hero, /requestAnimationFrame\(followCursor\)/);
   assert.match(hero, /target\.x - current\.x\) \* 0\.24/);
-  assert.doesNotMatch(hero, /<footer|<article/);
+  assert.match(page, /GlitchverseSections/);
+  assert.match(sections, /<footer/);
+  assert.match(sections, /AsciiFire/);
+  assert.match(sections, /Tetris/);
+  assert.match(sections, /HOW DO I REGISTER FOR THE HACKATHON\?/);
 });
 
 test("keeps the redesigned navbar solid and responsive", async () => {
