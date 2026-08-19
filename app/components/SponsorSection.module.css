@@ -14,6 +14,21 @@
   color: var(--cream);
 }
 
+.sponsors::before,
+.sponsors::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 5vw;
+  left: 5vw;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(250, 235, 146, 0.42) 18%, rgba(255, 95, 207, 0.58) 50%, rgba(250, 235, 146, 0.42) 82%, transparent);
+  opacity: 0.7;
+}
+
+.sponsors::before { top: 28px; }
+.sponsors::after { bottom: 28px; }
+
 .backgroundGrid {
   position: absolute;
   z-index: -2;
@@ -25,6 +40,20 @@
   background-size: 68px 68px;
   mask-image: linear-gradient(to bottom, transparent, black 20%, black 78%, transparent);
   animation: gridDrift 18s linear infinite;
+}
+
+.filmGrain {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(250, 235, 146, 0.07) 4px 5px),
+    repeating-linear-gradient(90deg, transparent 0 17px, rgba(153, 41, 234, 0.08) 18px 19px);
+  mix-blend-mode: screen;
+  mask-image: linear-gradient(to bottom, transparent, black 14%, black 86%, transparent);
+  animation: grainShift 0.24s steps(2, end) infinite;
 }
 
 .orbitalRing {
@@ -65,6 +94,30 @@
 .signal span:nth-child(2) { animation-delay: -1.7s; opacity: 0.68; }
 .signal span:nth-child(3) { animation-delay: -3.4s; opacity: 0.4; }
 
+.glitchBursts {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.glitchBursts span {
+  position: absolute;
+  left: -30%;
+  width: 52%;
+  height: 2px;
+  opacity: 0;
+  background: var(--pink);
+  box-shadow: 18px 0 0 rgba(153, 41, 234, 0.8), 0 0 14px rgba(255, 95, 207, 0.9);
+  animation: transmissionBurst 7.2s steps(1, end) infinite;
+}
+
+.glitchBursts span:nth-child(1) { top: 31%; }
+.glitchBursts span:nth-child(2) { top: 58%; height: 5px; animation-delay: -2.45s; }
+.glitchBursts span:nth-child(3) { top: 76%; width: 35%; animation-delay: -4.9s; }
+
 .heading {
   position: relative;
   z-index: 1;
@@ -72,6 +125,10 @@
   margin: 0 auto clamp(54px, 7vw, 90px);
   text-align: center;
 }
+
+.heading,
+.marquee,
+.coordinates { isolation: isolate; }
 
 .eyebrow,
 .subhead,
@@ -146,6 +203,21 @@
   padding: 18px 0 28px;
 }
 
+.marquee::before,
+.marquee::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  right: 6vw;
+  left: 6vw;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(250, 235, 146, 0.34), transparent);
+}
+
+.marquee::before { top: 0; }
+.marquee::after { bottom: 6px; }
+
 .edgeFade {
   position: absolute;
   z-index: 2;
@@ -158,7 +230,7 @@
   display: flex;
   width: max-content;
   gap: clamp(16px, 2vw, 30px);
-  animation: sponsorScroll 32s linear infinite;
+  animation: sponsorScroll 13s linear infinite;
   will-change: transform;
 }
 
@@ -195,6 +267,20 @@
     linear-gradient(90deg, transparent, rgba(255, 95, 207, 0.34), transparent);
   filter: blur(8px);
   transform: skewX(-15deg) translateX(-20%);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, transparent 0 12%, rgba(255, 95, 207, 0.46) 13% 22%, transparent 23% 54%, rgba(153, 41, 234, 0.46) 55% 72%, transparent 73%),
+    repeating-linear-gradient(0deg, transparent 0 9px, rgba(250, 235, 146, 0.14) 10px 12px);
+  mix-blend-mode: screen;
+  animation: cardTransmission 8.4s steps(1, end) infinite;
 }
 
 .card:hover {
@@ -264,6 +350,13 @@
   to { background-position: 68px 68px; }
 }
 
+@keyframes grainShift {
+  0% { transform: translate(0); }
+  33% { transform: translate(-2%, 1%); }
+  66% { transform: translate(1%, -2%); }
+  100% { transform: translate(-1%, 2%); }
+}
+
 @keyframes ringPulse {
   0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) rotate(-5deg) scale(0.98); }
   50% { opacity: 0.82; transform: translate(-50%, -50%) rotate(-5deg) scale(1.02); }
@@ -317,13 +410,75 @@
   100% { opacity: 0; transform: skewX(-15deg) translateX(310%); }
 }
 
+@keyframes transmissionBurst {
+  0%, 38%, 42%, 100% { left: -30%; opacity: 0; transform: scaleX(0.2); }
+  39% { left: -8%; opacity: 0.92; transform: scaleX(1.25); }
+  40% { left: 42%; opacity: 0.58; transform: scaleX(0.76); }
+  41% { left: 110%; opacity: 0; transform: scaleX(0.2); }
+}
+
+@keyframes cardTransmission {
+  0%, 41%, 45%, 100% { opacity: 0; transform: translateX(0); }
+  42% { opacity: 0.7; transform: translateX(-8px) scaleY(1.18); }
+  43% { opacity: 0.35; transform: translateX(10px) scaleY(0.65); }
+  44% { opacity: 0.58; transform: translateX(-4px); }
+}
+
 @media (max-width: 640px) {
   .sponsors { min-height: 580px; padding-block: 86px 72px; }
   .heading { width: min(100% - 32px, 1180px); }
   .eyebrow { max-width: 260px; line-height: 1.5; text-align: left; }
   .heading h2 { font-size: clamp(42px, 10.5vw, 72px); }
+  .subhead { font-size: 8px; line-height: 1.5; }
+  .marquee { padding-block: 12px 20px; }
+  .track { gap: 16px; }
+  .card {
+    width: min(68vw, 260px);
+    height: clamp(128px, 37vw, 150px);
+  }
   .coordinates { width: min(100% - 32px, 1180px); font-size: 7px; }
   .coordinates span:nth-child(2) { display: none; }
+  .orbitalRing { width: 128vw; top: 57%; }
+  .signal { width: 112vw; }
+}
+
+@media (min-width: 641px) and (max-width: 960px) {
+  .sponsors { min-height: 620px; padding-block: 104px 92px; }
+  .heading { margin-bottom: 64px; }
+  .heading h2 { font-size: clamp(62px, 9.8vw, 94px); }
+  .track { gap: 22px; }
+  .card {
+    width: clamp(230px, 30vw, 278px);
+    height: clamp(138px, 17vw, 158px);
+  }
+  .coordinates { width: min(100% - 64px, 1180px); }
+}
+
+@media (max-width: 430px) {
+  .sponsors { min-height: 540px; padding-block: 70px 58px; }
+  .heading { margin-bottom: 42px; }
+  .eyebrow { font-size: 8px; letter-spacing: 0.13em; }
+  .heading h2 { font-size: clamp(40px, 10.8vw, 48px); letter-spacing: -0.065em; }
+  .subhead { max-width: 230px; margin-inline: auto; }
+  .card {
+    width: min(76vw, 244px);
+    height: 128px;
+  }
+  .logoWrap { width: 74%; }
+  .coordinates { margin-top: 34px; letter-spacing: 0.1em; }
+  .coordinates span:last-child { display: none; }
+  .backgroundGrid { background-size: 48px 48px; }
+}
+
+@media (max-width: 350px) {
+  .heading h2 { font-size: 38px; }
+  .card { width: 78vw; height: 122px; }
+  .track { gap: 12px; }
+}
+
+@media (pointer: coarse) {
+  .marquee { overscroll-behavior-x: contain; }
+  .card:hover { transform: skewX(-6deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -334,7 +489,10 @@
   .heading h2,
   .heading h2::before,
   .heading h2::after,
-  .track { animation: none; }
+  .track,
+  .filmGrain,
+  .glitchBursts span,
+  .card::after { animation: none; }
   .track { transform: translateX(-25%); }
   .card:hover::before { animation: none; opacity: 0.42; transform: skewX(-15deg) translateX(120%); }
 }
