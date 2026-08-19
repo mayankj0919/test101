@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GlitchverseHero } from "./components/GlitchverseHero";
+import { TimelineRoad } from "@/components/timeline/TimelineRoad";
 import { GlitchverseSections } from "./components/GlitchverseSections";
 
 export const metadata: Metadata = {
@@ -10,9 +11,10 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-black">
       <GlitchverseHero />
+      <TimelineRoad />
       <GlitchverseSections />
-    </>
+    </div>
   );
 }
