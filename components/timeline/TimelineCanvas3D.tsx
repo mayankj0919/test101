@@ -378,27 +378,9 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         }
       }
 
-      // STEP C: 3D Transversal Grid Rows (Horizontal Lines across Depth Z)
-      for (let r = 0; r < maxGridRows; r++) {
-        const rz = startZSnap + r * rowSpacingZ;
-        if (rz < zStart || rz > zEnd) continue;
+      // STEP C: 3D Transversal Grid Rows (Removed as requested)
 
-        const pL = project3D(-roadWidth / 2, ROAD_HEIGHT, rz, width, height);
-        const pR = project3D(roadWidth / 2, ROAD_HEIGHT, rz, width, height);
-
-        if (pL && pR) {
-          const depthAlpha = Math.max(0, Math.min(1, (zEnd - rz) / (zEnd - zStart)));
-          ctx.strokeStyle = `rgba(153, 41, 234, ${0.32 * depthAlpha})`;
-          ctx.lineWidth = Math.max(0.65, 1.1 * pL.scale);
-          ctx.beginPath();
-          ctx.moveTo(pL.x, pL.y);
-          ctx.lineTo(pR.x, pR.y);
-          ctx.stroke();
-        }
-      }
-
-      // STEP D: 3D Longitudinal Grid Columns (Set to 0 opacity as requested)
-      // (Vertical parallel lines removed)
+      // STEP D: 3D Longitudinal Grid Columns (Removed as requested)
 
       // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones)
       TIMELINE_EVENTS.forEach((evt, idx) => {
@@ -410,23 +392,23 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           const isActive = idx === physicalStageIdx;
           const isHovered = idx === hoveredNodeIndexRef.current;
           
-          ctx.strokeStyle = isActive ? '#FFE279' : isHovered ? '#00F0FF' : 'rgba(255, 95, 207, 0.30)';
-          ctx.lineWidth = isActive ? 2.6 : 1.2;
-          if (isActive) {
-            ctx.shadowColor = '#FFE279';
-            ctx.shadowBlur = 10;
+          if (isActive || isHovered) {
+            ctx.strokeStyle = isActive ? '#FFE279' : '#00F0FF';
+            ctx.lineWidth = isActive ? 2.6 : 1.4;
+            ctx.shadowColor = isActive ? '#FFE279' : '#00F0FF';
+            ctx.shadowBlur = isActive ? 12 : 6;
+
+            ctx.beginPath();
+            ctx.moveTo(pLeft.x, pLeft.y);
+            ctx.lineTo(pRight.x, pRight.y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
           }
 
-          ctx.beginPath();
-          ctx.moveTo(pLeft.x, pLeft.y);
-          ctx.lineTo(pRight.x, pRight.y);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-
           // Date Ticker
-          if (pLeft.scale > 0.35) {
-            ctx.font = `${Math.max(9, Math.round(11 * pLeft.scale))}px "Geist Mono", monospace`;
-            ctx.fillStyle = isActive ? '#FFE279' : 'rgba(255, 255, 255, 0.50)';
+          if (isActive && pLeft.scale > 0.35) {
+            ctx.font = `bold ${Math.max(10, Math.round(12 * pLeft.scale))}px "Geist Mono", monospace`;
+            ctx.fillStyle = '#FFE279';
             ctx.textAlign = 'right';
             ctx.fillText(`${evt.dateShort}`, pLeft.x - 12 * pLeft.scale, pLeft.y + 4 * pLeft.scale);
           }
