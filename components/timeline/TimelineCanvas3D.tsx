@@ -382,35 +382,48 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
 
       // STEP D: 3D Longitudinal Grid Columns (Removed as requested)
 
-      // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones)
+      // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones with Dates)
       TIMELINE_EVENTS.forEach((evt, idx) => {
         const stageZ = idx * STAGE_SPACING;
         const pLeft = project3D(-roadWidth / 2 - 35, ROAD_HEIGHT, stageZ, width, height);
         const pRight = project3D(roadWidth / 2 + 35, ROAD_HEIGHT, stageZ, width, height);
 
-        if (pLeft && pRight) {
+        if (pLeft && pRight && pLeft.relZ > 20 && pLeft.relZ < 2400) {
           const isActive = idx === physicalStageIdx;
           const isHovered = idx === hoveredNodeIndexRef.current;
+          const depthAlpha = Math.max(0.15, Math.min(1, (2400 - pLeft.relZ) / 1000));
           
-          if (isActive || isHovered) {
-            ctx.strokeStyle = isActive ? '#FFE279' : '#00F0FF';
-            ctx.lineWidth = isActive ? 2.6 : 1.4;
-            ctx.shadowColor = isActive ? '#FFE279' : '#00F0FF';
-            ctx.shadowBlur = isActive ? 12 : 6;
-
-            ctx.beginPath();
-            ctx.moveTo(pLeft.x, pLeft.y);
-            ctx.lineTo(pRight.x, pRight.y);
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+          ctx.strokeStyle = isActive 
+            ? '#FFE279' 
+            : isHovered 
+            ? '#00F0FF' 
+            : `rgba(255, 95, 207, ${0.45 * depthAlpha})`;
+          
+          ctx.lineWidth = isActive ? 2.6 : isHovered ? 1.6 : Math.max(1.0, 1.3 * pLeft.scale);
+          if (isActive) {
+            ctx.shadowColor = '#FFE279';
+            ctx.shadowBlur = 12;
+          } else if (isHovered) {
+            ctx.shadowColor = '#00F0FF';
+            ctx.shadowBlur = 8;
           }
 
-          // Date Ticker
-          if (isActive && pLeft.scale > 0.35) {
-            ctx.font = `bold ${Math.max(10, Math.round(12 * pLeft.scale))}px "Geist Mono", monospace`;
-            ctx.fillStyle = '#FFE279';
+          ctx.beginPath();
+          ctx.moveTo(pLeft.x, pLeft.y);
+          ctx.lineTo(pRight.x, pRight.y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Date Ticker on the left side of every milestone rung
+          if (pLeft.scale > 0.25) {
+            ctx.font = `${isActive ? 'bold ' : '500 '}${Math.max(9, Math.round((isActive ? 12 : 10.5) * pLeft.scale))}px "Geist Mono", monospace`;
+            ctx.fillStyle = isActive 
+              ? '#FFE279' 
+              : isHovered 
+              ? '#00F0FF' 
+              : `rgba(250, 235, 146, ${0.75 * depthAlpha})`;
             ctx.textAlign = 'right';
-            ctx.fillText(`${evt.dateShort}`, pLeft.x - 12 * pLeft.scale, pLeft.y + 4 * pLeft.scale);
+            ctx.fillText(`${evt.dateShort}`, pLeft.x - 10 * pLeft.scale, pLeft.y + 4 * pLeft.scale);
           }
         }
       });
