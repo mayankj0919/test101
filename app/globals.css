@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@source "../components/originkit";
+
+@font-face {
+  font-family: "Cyber City";
+  src: url("/fonts/cyber-city.otf") format("opentype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+:root {
+  --ink: #000000;
+  --paper: #faeb92;
+  --acid: #ff5fcf;
+  --purple: #9929ea;
+  --font-display: "Cyber City", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  --font-brand: "Cyber City", Impact, sans-serif;
+  --font-body: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+  --font-screen: "Lucida Console", "Courier New", Courier, monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--ink);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: var(--acid);
+  color: var(--ink);
+}
