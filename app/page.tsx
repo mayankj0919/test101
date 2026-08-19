@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GlitchverseHero } from "./components/GlitchverseHero";
 import { TimelineRoad } from "@/components/timeline/TimelineRoad";
+import { GlitchverseSections } from "./components/GlitchverseSections";
 
 export const metadata: Metadata = {
   title: "Codeutsava X.0 — Build Beyond the Screen",
@@ -13,6 +14,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-black">
       <GlitchverseHero />
       <TimelineRoad />
+      <GlitchverseSections />
     </div>
   );
 }

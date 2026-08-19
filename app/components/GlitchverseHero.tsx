@@ -120,9 +120,10 @@ export function GlitchverseHero() {
         </a>
 
         <nav className={styles.navLinks} aria-label="Primary navigation">
-          <a href="#brief">THE EVENT</a>
-          <a href="#signal">THE THEME</a>
-          <a href="https://discord.gg/Ek9gr2Xnqb">COMMUNITY</a>
+          <a href="#brief">THE BRIEF</a>
+          <a href="#signal">THE SIGNAL</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">CONTACT</a>
         </nav>
 
         <a className={styles.navCta} href="https://discord.gg/Ek9gr2Xnqb">
