@@ -50,7 +50,6 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
 
   // Smooth Scroll-Activated Expansion Progress
   const expansionProgressRef = useRef<number[]>(new Array(TIMELINE_EVENTS.length).fill(0));
-  const activeEventIndexRef = useRef<number>(activeEventIndex);
   const prevReportedStageRef = useRef<number>(activeEventIndex);
 
   const onSelectEventRef = useRef(onSelectEvent);
@@ -62,10 +61,6 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
   useEffect(() => {
     onOpenDialogRef.current = onOpenDialog;
   }, [onOpenDialog]);
-
-  useEffect(() => {
-    activeEventIndexRef.current = activeEventIndex;
-  }, [activeEventIndex]);
 
   // Generate ambient particle cloud (Optimized particle count with frustum culling)
   const particlesRef = useRef<Particle[]>([]);
@@ -204,26 +199,6 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       const py = cy + y * scale;
 
       return { x: px, y: py, scale, relZ };
-    };
-
-    // Text Wrapping Helper in Canonical Pixel Units
-    const wrapText = (text: string, maxWidth: number): string[] => {
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = words[0] || '';
-      for (let i = 1; i < words.length; i++) {
-        const word = words[i];
-        const testLine = currentLine + ' ' + word;
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width < maxWidth) {
-          currentLine = testLine;
-        } else {
-          lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-      return lines;
     };
 
     let tick = 0;
@@ -437,7 +412,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       });
 
       let closestNodeIdx: number | null = null;
-      let minDistanceToMouse = 55;
+      const minDistanceToMouse = 55;
 
       sortedStageIndices.forEach((idx) => {
         const evt = TIMELINE_EVENTS[idx];
@@ -872,6 +847,14 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick();
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label="3D Timeline Road Interactive Canvas"
       className="w-full h-full absolute inset-0 cursor-crosshair select-none bg-[#020104]"
     >
       <canvas ref={canvasRef} className="w-full h-full block" />

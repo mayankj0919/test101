@@ -43,8 +43,6 @@ export const TimelineRoad: React.FC = () => {
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(retroAudio.getMuted());
 
-  const activeEvent = TIMELINE_EVENTS[activeEventIndex];
-
   // STICKY SCROLL PROGRESS TRACKING (Optimized with rAF & Threshold Deadband)
   useEffect(() => {
     let ticking = false;
@@ -184,9 +182,14 @@ export const TimelineRoad: React.FC = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setSelectedModalEvent(null)}
+            role="presentation"
             className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md cursor-pointer"
           >
-            <div onClick={(e) => e.stopPropagation()} className="cursor-default w-full max-w-[600px]">
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              role="presentation"
+              className="cursor-default w-full max-w-[600px]"
+            >
               <WindowsXPDialog
                 event={selectedModalEvent}
                 isFloatingModal={true}
