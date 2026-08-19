@@ -193,12 +193,22 @@ export function GlitchverseHero() {
                         <div className={styles.glitchNoise} aria-hidden="true" />
                         <div className={styles.signalLoss} aria-hidden="true" />
                         <div className={styles.screenContent}>
-                          <span className={styles.screenLabel}>GLITCH &times; ILLUSION</span>
-                          <strong className={styles.screenHeadline} data-text={"MAKE\nIT REAL"}>
-                            <span>MAKE</span>
-                            <span>IT REAL</span>
+                          <span className={styles.screenLabel}>TCP // NIT RAIPUR</span>
+                          <strong
+                            className={styles.screenHeadline}
+                            data-text={"CODEUTSAVA\nX.O"}
+                            aria-label="CodeUtsava X.O, edition ten"
+                          >
+                            <span className={styles.screenBrandLine} aria-hidden="true">
+                              CODEUTSAVA
+                            </span>
+                            <span className={styles.editionCycle} aria-hidden="true">
+                              <span className={styles.editionXo}>X.O</span>
+                              <span className={styles.editionTen}>10</span>
+                              <span className={styles.editionDas}>&#2342;&#2360;</span>
+                            </span>
                           </strong>
-                          <span className={styles.terminalLine}>&gt; SIGNAL ACQUIRED_</span>
+                          <span className={styles.terminalLine}>&gt; EDITION_ID UNSTABLE_</span>
                         </div>
                         <span className={styles.crosshair} aria-hidden="true">
                           +
