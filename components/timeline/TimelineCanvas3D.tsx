@@ -397,42 +397,8 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         }
       }
 
-      // STEP D: 3D Longitudinal Grid Columns (Perspective Depth Lines)
-      for (let c = 0; c <= numCols; c++) {
-        const colX = -roadWidth / 2 + c * colWidth;
-        const pNear = project3D(colX, ROAD_HEIGHT, zStart, width, height);
-        const pFar = project3D(colX, ROAD_HEIGHT, zEnd, width, height);
-
-        if (pNear && pFar) {
-          const isOuterBorder = c === 0 || c === numCols;
-          const isMainLane = c === 4 || c === 8 || c === 12;
-
-          if (isOuterBorder) {
-            // Glowing Neon Violet Outer Boundary Rails
-            ctx.strokeStyle = '#9929EA';
-            ctx.lineWidth = Math.max(2.0, 2.8 * pNear.scale);
-            ctx.shadowColor = '#FF5FCF';
-            ctx.shadowBlur = 10;
-          } else if (isMainLane) {
-            // Major Lane Separators
-            ctx.strokeStyle = 'rgba(255, 95, 207, 0.45)';
-            ctx.lineWidth = Math.max(1.0, 1.4 * pNear.scale);
-            ctx.shadowColor = 'rgba(255, 95, 207, 0.3)';
-            ctx.shadowBlur = 4;
-          } else {
-            // Fine-pitch Duochrome Purple Grid Subdivisions
-            ctx.strokeStyle = 'rgba(153, 41, 234, 0.24)';
-            ctx.lineWidth = Math.max(0.6, 0.85 * pNear.scale);
-            ctx.shadowBlur = 0;
-          }
-
-          ctx.beginPath();
-          ctx.moveTo(pNear.x, pNear.y);
-          ctx.lineTo(pFar.x, pFar.y);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-        }
-      }
+      // STEP D: 3D Longitudinal Grid Columns (Set to 0 opacity as requested)
+      // (Vertical parallel lines removed)
 
       // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones)
       TIMELINE_EVENTS.forEach((evt, idx) => {
