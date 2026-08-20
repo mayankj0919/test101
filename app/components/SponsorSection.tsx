@@ -5,10 +5,14 @@ const sponsors = [
   { name: "CPTCL", src: "/sponsors/cptcl.png" },
   { name: "GKTMT", src: "/sponsors/gktmt.png" },
   { name: "LIC", src: "/sponsors/lic.png" },
+  { name: "algo-university", src: "/sponsors/algo-university.png" },
 ];
 
 export function SponsorSection() {
   const rail = [...sponsors, ...sponsors, ...sponsors, ...sponsors];
+  const mobileRowOffset = Math.ceil(sponsors.length / 2);
+  const shiftedSponsors = [...sponsors.slice(mobileRowOffset), ...sponsors.slice(0, mobileRowOffset)];
+  const shiftedRail = [...shiftedSponsors, ...shiftedSponsors, ...shiftedSponsors, ...shiftedSponsors];
 
   return (
     <section className={styles.sponsors} id="sponsors" aria-labelledby="sponsors-title">
@@ -53,6 +57,49 @@ export function SponsorSection() {
               <span className={styles.cardCorner} aria-hidden="true" />
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className={styles.mobileMarquee} aria-label="Sponsors">
+        <div className={styles.mobileRow}>
+          <div className={styles.edgeFade} aria-hidden="true" />
+          <div className={styles.mobileTrack}>
+            {rail.map((sponsor, index) => (
+              <div className={styles.card} key={`mobile-top-${sponsor.name}-${index}`}>
+                <div className={styles.cardScanline} aria-hidden="true" />
+                <div className={styles.logoWrap}>
+                  <Image
+                    src={sponsor.src}
+                    alt={`${sponsor.name} logo`}
+                    fill
+                    sizes="(max-width: 640px) 170px, 280px"
+                    className={styles.logo}
+                  />
+                </div>
+                <span className={styles.cardCorner} aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className={styles.mobileRow}>
+          <div className={styles.edgeFade} aria-hidden="true" />
+          <div className={styles.mobileTrack}>
+            {shiftedRail.map((sponsor, index) => (
+              <div className={styles.card} key={`mobile-bottom-${sponsor.name}-${index}`}>
+                <div className={styles.cardScanline} aria-hidden="true" />
+                <div className={styles.logoWrap}>
+                  <Image
+                    src={sponsor.src}
+                    alt={`${sponsor.name} logo`}
+                    fill
+                    sizes="(max-width: 640px) 170px, 280px"
+                    className={styles.logo}
+                  />
+                </div>
+                <span className={styles.cardCorner} aria-hidden="true" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
