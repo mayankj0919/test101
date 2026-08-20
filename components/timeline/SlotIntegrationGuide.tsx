@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, Terminal, Code2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Copy, Check, Terminal, Code2, CheckCircle2 } from 'lucide-react';
 import { retroAudio } from '@/utils/audioEffects';
 
 export const SlotIntegrationGuide: React.FC = () => {

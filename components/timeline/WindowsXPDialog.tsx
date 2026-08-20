@@ -1,7 +1,4 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { TimelineEvent } from '@/data/timelineEvents';
 import { retroAudio } from '@/utils/audioEffects';
 import confetti from 'canvas-confetti';
@@ -31,7 +28,6 @@ interface WindowsXPDialogProps {
 
 export const WindowsXPDialog: React.FC<WindowsXPDialogProps> = ({
   event,
-  isExpanded = false,
   onClose,
   onSelectNext,
   onSelectPrev,
@@ -43,14 +39,21 @@ export const WindowsXPDialog: React.FC<WindowsXPDialogProps> = ({
   const [activeTab, setActiveTab] = useState<'details' | 'raw_log' | 'diagnostics'>('details');
   const [isGlitching, setIsGlitching] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [prevEventId, setPrevEventId] = useState(event.id);
   const [isMaterializing, setIsMaterializing] = useState(true);
+
+  if (prevEventId !== event.id) {
+    setPrevEventId(event.id);
+    setIsMaterializing(true);
+  }
 
   // Trigger Spider-Verse Glitch Materialize shader when stage changes
   useEffect(() => {
-    setIsMaterializing(true);
-    const timer = setTimeout(() => setIsMaterializing(false), 460);
-    return () => clearTimeout(timer);
-  }, [event.id]);
+    if (isMaterializing) {
+      const timer = setTimeout(() => setIsMaterializing(false), 460);
+      return () => clearTimeout(timer);
+    }
+  }, [isMaterializing]);
 
   const handleCopy = () => {
     retroAudio.playXPClick();
@@ -302,7 +305,7 @@ export const WindowsXPDialog: React.FC<WindowsXPDialogProps> = ({
 
         {activeTab === 'raw_log' && (
           <div className="text-[11px] text-green-400 bg-black/70 p-3 rounded border border-green-500/30 space-y-1.5">
-            <p className="text-gray-400">// CODEUTSAVA KERNEL LOG DUMP</p>
+            <p className="text-gray-400">{'// CODEUTSAVA KERNEL LOG DUMP'}</p>
             <p>&gt; EXEC: {event.xpFileName}</p>
             <p>&gt; STAMP: {event.date} - {event.time}</p>
             <p>&gt; ADDR: {event.memoryAddress}</p>
