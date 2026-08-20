@@ -109,26 +109,26 @@ export function GlitchverseHero() {
       <div className={styles.cursorGlow} aria-hidden="true" />
 
       <header className={styles.navbar}>
-        <a className={styles.brand} href="#top" aria-label="Codeutsava X.0 home">
+        <a className={styles.brand} href="#top" aria-label="CodeUtsava X home">
           <span className={styles.brandGlyph} aria-hidden="true">
             C<span>/</span>U
           </span>
           <span className={styles.brandText}>
             CODEUTSAVA
-            <small>VERSION X.0</small>
+            <small>TENTH EDITION</small>
           </span>
         </a>
 
         <nav className={styles.navLinks} aria-label="Primary navigation">
           <a href="#brief">THE BRIEF</a>
           <a href="#signal">THE SIGNAL</a>
-          <a href="#sponsors">SPONSORS</a>
-          <a href="#join">ENTER</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">CONTACT</a>
         </nav>
 
-        <a className={styles.navCta} href="#join">
+        <a className={styles.navCta} href="https://discord.gg/Ek9gr2Xnqb">
           <span className={styles.liveDot} aria-hidden="true" />
-          JOIN THE SIGNAL
+          JOIN THE COMMUNITY
           <span aria-hidden="true">↗</span>
         </a>
       </header>
@@ -136,40 +136,35 @@ export function GlitchverseHero() {
       <section className={styles.heroGrid} aria-labelledby="hero-title">
         <div className={styles.copy} id="brief">
           <div className={styles.kicker}>
-            <span>CODEUTSAVA X.0</span>
+            <span>CODEUTSAVA X</span>
             <span className={styles.kickerRule} />
-            <span>THE GLITCHVERSE</span>
+            <span>GLITCH &times; ILLUSION</span>
           </div>
 
           <h1 className={styles.title} id="hero-title">
             <span>BUILD</span>
             <span>BEYOND THE</span>
-            <span className={styles.screenWord}>SCREEN.</span>
+            <span className={styles.screenWord}>EXPECTED.</span>
           </h1>
 
           <div className={styles.copyFooter} id="join">
             <p>
-              Reality is only the first draft. Break the expected, compile the
-              impossible, and make your next idea impossible to ignore.
+              CodeUtsava X is the 10th edition of NIT Raipur&apos;s flagship
+              technology celebration&mdash;uniting students and developers to build, learn, compete, and reimagine what technology can do.
             </p>
-            <a className={styles.primaryCta} href="#signal">
-              <span>ENTER THE GLITCHVERSE</span>
-              <span className={styles.ctaArrow} aria-hidden="true">
-                ↗
-              </span>
-            </a>
+
           </div>
         </div>
 
         <div className={styles.visual} id="signal" aria-label="Interactive CRT transmission">
           <span className={`${styles.codeFragment} ${styles.fragmentOne}`} aria-hidden="true">
-            010_X
+            EDITION//10
           </span>
           <span className={`${styles.codeFragment} ${styles.fragmentTwo}`} aria-hidden="true">
             SIGNAL//LIVE
           </span>
           <span className={`${styles.codeFragment} ${styles.fragmentThree}`} aria-hidden="true">
-            &lt;/REALITY&gt;
+            &lt;/PERCEPTION&gt;
           </span>
 
           <div className={styles.monitorScene}>
@@ -194,12 +189,22 @@ export function GlitchverseHero() {
                         <div className={styles.glitchNoise} aria-hidden="true" />
                         <div className={styles.signalLoss} aria-hidden="true" />
                         <div className={styles.screenContent}>
-                          <span className={styles.screenLabel}>CODEUTSAVA // X.0</span>
-                          <strong className={styles.screenHeadline} data-text={"MAKE\nIT REAL"}>
-                            <span>MAKE</span>
-                            <span>IT REAL</span>
+                          <span className={styles.screenLabel}>TCP // NIT RAIPUR</span>
+                          <strong
+                            className={styles.screenHeadline}
+                            data-text={"CODEUTSAVA\nX.O"}
+                            aria-label="CodeUtsava X.O, edition ten"
+                          >
+                            <span className={styles.screenBrandLine} aria-hidden="true">
+                              CODEUTSAVA
+                            </span>
+                            <span className={styles.editionCycle} aria-hidden="true">
+                              <span className={styles.editionXo}>X.O</span>
+                              <span className={styles.editionTen}>10</span>
+                              <span className={styles.editionDas}>&#2342;&#2360;</span>
+                            </span>
                           </strong>
-                          <span className={styles.terminalLine}>&gt; SIGNAL ACQUIRED_</span>
+                          <span className={styles.terminalLine}>&gt; EDITION_ID UNSTABLE_</span>
                         </div>
                         <span className={styles.crosshair} aria-hidden="true">
                           +
@@ -234,17 +239,17 @@ export function GlitchverseHero() {
 
           <p className={styles.dragHint} aria-hidden="true">
             <span>MOVE CURSOR</span>
-            <span>TO BEND REALITY</span>
+            <span>TO DISTORT PERCEPTION</span>
           </p>
         </div>
       </section>
 
       <div className={styles.bottomRail}>
-        <span>NEXT TRANSMISSION // SOON</span>
+        <span>10TH EDITION // NIT RAIPUR</span>
         <span className={styles.ticker}>
-          <span>IDEATE</span> / <span>DISRUPT</span> / <span>DEPLOY</span>
+          <span>BUILD</span> / <span>BREAK</span> / <span>PERCEIVE</span> / <span>REIMAGINE</span>
         </span>
-        <span>ONE VIEWPORT // THE WHOLE WORLD</span>
+        <span>BY TURING CLUB OF PROGRAMMERS</span>
       </div>
     </main>
   );

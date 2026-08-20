@@ -68,20 +68,53 @@
 .navbar {
   position: relative;
   z-index: 20;
-  height: 96px;
-  margin: 0 clamp(24px, 4vw, 72px);
-  border-bottom: 1px solid rgba(250, 235, 146, 0.22);
+  height: 82px;
+  margin: 12px clamp(24px, 4vw, 72px) 0;
+  padding: 0 18px;
+  border-block: 1px solid rgba(250, 235, 146, 0.28);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 32px;
+  gap: 28px;
+  background:
+    linear-gradient(90deg, rgba(255, 95, 207, 0.09), transparent 18% 82%, rgba(153, 41, 234, 0.12)),
+    rgba(0, 0, 0, 0.92);
+  box-shadow:
+    inset 4px 0 0 var(--lime),
+    inset -4px 0 0 var(--purple),
+    0 18px 44px rgba(0, 0, 0, 0.38);
+}
+
+.navbar::before,
+.navbar::after {
+  content: "";
+  position: absolute;
+  height: 3px;
+  pointer-events: none;
+}
+
+.navbar::before {
+  top: -1px;
+  left: 64px;
+  width: 88px;
+  background: var(--lime);
+  box-shadow: 0 0 15px rgba(255, 95, 207, 0.72);
+}
+
+.navbar::after {
+  right: 32px;
+  bottom: -1px;
+  width: 58px;
+  background: var(--bone);
+  box-shadow: -64px 0 0 var(--purple);
 }
 
 .brand {
+  min-width: 0;
   justify-self: start;
   display: inline-flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
   text-decoration: none;
 }
 
@@ -91,106 +124,110 @@
   border: 1px solid var(--lime);
   display: grid;
   place-items: center;
-  color: var(--lime);
-  font-family: var(--font-display);
+  flex: 0 0 auto;
+  background: rgba(153, 41, 234, 0.16);
+  color: var(--bone);
+  box-shadow: inset 4px 0 0 var(--lime);
+  font-family: var(--font-body);
   font-size: 17px;
-  font-weight: 400;
+  font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.14em;
-  transform: skew(-5deg);
+  letter-spacing: -0.08em;
 }
 
 .brandGlyph span {
-  color: var(--bone);
+  color: var(--lime);
 }
 
 .brandText {
   display: grid;
-  font-family: var(--font-brand);
-  font-size: 16px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  line-height: 1.05;
+  color: var(--bone);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
 }
 
 .brandText small {
-  margin-top: 5px;
-  color: rgba(250, 235, 146, 0.56);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  margin-top: 6px;
+  color: rgba(250, 235, 146, 0.55);
+  font-family: var(--font-body);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
 }
 
 .navLinks {
+  border: 1px solid rgba(250, 235, 146, 0.2);
   display: flex;
-  align-items: center;
-  gap: clamp(28px, 4vw, 64px);
-  font-family: var(--font-mono);
+  align-items: stretch;
+  background: #000000;
+  font-family: var(--font-body);
   font-size: 10px;
-  letter-spacing: 0.16em;
+  font-weight: 900;
+  letter-spacing: 0.13em;
 }
 
 .navLinks a {
   position: relative;
-  padding: 12px 0;
+  padding: 12px 18px;
+  color: rgba(250, 235, 146, 0.72);
   text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
-.navLinks a::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 5px;
-  left: 0;
-  height: 1px;
-  background: var(--lime);
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 180ms ease;
+.navLinks a + a {
+  border-left: 1px solid rgba(250, 235, 146, 0.16);
 }
 
-.navLinks a:hover::after,
-.navLinks a:focus-visible::after {
-  transform: scaleX(1);
-  transform-origin: left;
+.navLinks a:hover,
+.navLinks a:focus-visible {
+  background: var(--bone);
+  color: var(--black);
 }
 
 .navCta {
   justify-self: end;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid rgba(250, 235, 146, 0.4);
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-mono);
+  background: var(--lime);
+  color: var(--black);
+  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
+  font-family: var(--font-body);
   font-size: 9px;
+  font-weight: 900;
   letter-spacing: 0.12em;
   text-decoration: none;
-  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .navCta:hover,
 .navCta:focus-visible {
-  border-color: var(--lime);
-  background: var(--lime);
+  background: var(--bone);
   color: var(--black);
+  transform: translateY(-2px);
 }
 
 .liveDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--lime);
-  box-shadow: 0 0 12px var(--lime);
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--black);
+  background: transparent;
   animation: pulse 1.8s ease-in-out infinite;
 }
 
 .navCta:hover .liveDot,
 .navCta:focus-visible .liveDot {
   background: var(--black);
-  box-shadow: none;
 }
 
 .heroGrid {
@@ -285,11 +322,8 @@
 
 .copyFooter {
   width: 100%;
+  max-width: 430px;
   margin-top: clamp(34px, 5vh, 58px);
-  display: grid;
-  grid-template-columns: minmax(210px, 360px) auto;
-  align-items: center;
-  gap: clamp(24px, 4vw, 56px);
 }
 
 .copyFooter p {
@@ -298,47 +332,6 @@
   font-size: clamp(13px, 1.1vw, 16px);
   line-height: 1.6;
   text-align: left;
-}
-
-.primaryCta {
-  width: 172px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--lime);
-  color: var(--black);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-align: center;
-  text-decoration: none;
-  transform: rotate(-8deg);
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 180ms ease;
-}
-
-.primaryCta:hover,
-.primaryCta:focus-visible {
-  background: var(--bone);
-  transform: rotate(0deg) scale(1.06);
-}
-
-.primaryCta > span:first-child {
-  max-width: 112px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-}
-
-.ctaArrow {
-  font-size: 24px;
-  line-height: 1;
 }
 
 .visual {
@@ -663,6 +656,53 @@
 
 .screenHeadline span {
   display: block;
+}
+
+.screenBrandLine {
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.editionCycle {
+  min-width: 3.2ch;
+  height: 0.9em;
+  margin-top: 0.08em;
+  display: grid !important;
+  align-items: start;
+  color: var(--pink);
+  font-size: 1.42em;
+  line-height: 0.82;
+  text-shadow:
+    -4px 0 rgba(153, 41, 234, 0.72),
+    4px 0 rgba(250, 235, 146, 0.28),
+    0 0 16px rgba(255, 95, 207, 0.86);
+}
+
+.editionCycle > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform-origin: left center;
+}
+
+.editionXo {
+  opacity: 1;
+  animation: editionXo 6.8s steps(1, end) infinite;
+}
+
+.editionTen {
+  color: var(--cream);
+  animation: editionTen 6.8s steps(1, end) infinite;
+}
+
+.editionDas {
+  color: var(--pink);
+  font-family: "Nirmala UI", "Mangal", var(--font-body);
+  font-size: 0.82em;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  animation: editionDas 6.8s steps(1, end) infinite;
 }
 
 .screenHeadline::before,
@@ -1032,6 +1072,44 @@
   87% { opacity: 0.48; transform: translate(4px); clip-path: inset(54% 0 22% 0); }
 }
 
+@keyframes editionXo {
+  0%, 37%, 47%, 68%, 80%, 100% {
+    opacity: 1;
+    transform: translate(0) skewX(0) scaleX(1);
+    filter: none;
+  }
+  38%, 46%, 69%, 79% {
+    opacity: 0;
+    transform: translateX(-8px) skewX(12deg) scaleX(1.08);
+    filter: blur(1px);
+  }
+}
+
+@keyframes editionTen {
+  0%, 37%, 47%, 100% {
+    opacity: 0;
+    transform: translateX(0) skewX(0) scaleX(1);
+  }
+  38% { opacity: 0.34; transform: translateX(-10px) skewX(18deg) scaleX(1.28); }
+  39% { opacity: 1; transform: translateX(5px) skewX(-8deg) scaleX(0.94); }
+  40% { opacity: 0.52; transform: translateX(-4px) scaleX(1.12); }
+  41%, 45% { opacity: 1; transform: translateX(0) skewX(0) scaleX(1); }
+  46% { opacity: 0.24; transform: translateX(8px) skewX(-14deg) scaleX(0.82); }
+}
+
+@keyframes editionDas {
+  0%, 68%, 80%, 100% {
+    opacity: 0;
+    transform: translateX(0) skewX(0) scaleX(1);
+  }
+  69% { opacity: 0.28; transform: translateX(11px) skewX(-16deg) scaleX(0.78); }
+  70% { opacity: 1; transform: translateX(-6px) skewX(9deg) scaleX(1.18); }
+  71% { opacity: 0.46; transform: translateX(5px) scaleY(0.72); }
+  72%, 77% { opacity: 1; transform: translateX(0) skewX(0) scale(1); }
+  78% { opacity: 0.56; transform: translateX(-8px) skewX(12deg) scaleX(1.1); }
+  79% { opacity: 0.18; transform: translateX(9px) scaleY(0.54); }
+}
+
 @keyframes signalJitter {
   0%, 41%, 44%, 72%, 75%, 100% { opacity: 1; filter: none; }
   42% { opacity: 0.78; filter: blur(0.3px); }
@@ -1058,17 +1136,27 @@
     gap: 32px;
   }
   .title { font-size: clamp(52px, 7.6vw, 80px); }
-  .copyFooter { grid-template-columns: 1fr; }
-  .primaryCta { width: 146px; }
   .visual { min-height: 530px; }
 }
 
 @media (max-width: 760px) {
   .hero { min-height: 100svh; overflow-y: auto; }
-  .navbar { height: 78px; margin-inline: 18px; }
-  .brandGlyph { width: 38px; }
+  .navbar {
+    height: 66px;
+    margin: 10px 12px 0;
+    padding-inline: 10px;
+    gap: 16px;
+  }
+  .navbar::before { left: 42px; width: 62px; }
+  .navbar::after { right: 20px; width: 42px; box-shadow: -48px 0 0 var(--purple); }
+  .brand { gap: 9px; }
+  .brandGlyph { width: 38px; box-shadow: inset 3px 0 0 var(--lime); }
   .brandText { font-size: 11px; }
-  .navCta { min-height: 40px; padding-inline: 12px; font-size: 8px; }
+  .navCta {
+    min-height: 42px;
+    padding-inline: 13px;
+    font-size: 8px;
+  }
   .navCta .liveDot { display: none; }
   .heroGrid {
     padding: 42px 22px 54px;
@@ -1079,12 +1167,10 @@
   .title { font-size: clamp(54px, 16vw, 82px); }
   .title > span:nth-child(2) { font-size: 0.6em; }
   .copyFooter {
+    max-width: none;
     margin-top: 36px;
-    grid-template-columns: minmax(0, 1fr) 112px;
-    gap: 18px;
   }
   .copyFooter p { font-size: 12px; }
-  .primaryCta { width: 112px; font-size: 7px; }
   .visual { min-height: 470px; }
   .monitorScene { width: min(100%, 470px); }
   .monitor { width: 88%; }
@@ -1096,8 +1182,6 @@
 
 @media (max-width: 430px) {
   .brandText { display: none; }
-  .copyFooter { grid-template-columns: 1fr; }
-  .primaryCta { width: 126px; }
   .visual { min-height: 400px; }
   .screenContent strong { font-size: clamp(30px, 10vw, 44px); }
   .controls { height: 48px; gap: 8px; }
@@ -1127,6 +1211,9 @@
   .signalLoss,
   .screenHeadline::before,
   .screenHeadline::after,
+  .editionXo,
+  .editionTen,
+  .editionDas,
   .crosshair,
   .monitorShadow,
   .codeFragment {

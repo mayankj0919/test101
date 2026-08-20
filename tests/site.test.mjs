@@ -2,21 +2,43 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("keeps the experience focused on the requested navbar and hero", async () => {
-  const hero = await readFile(
-    new URL("../app/components/GlitchverseHero.tsx", import.meta.url),
-    "utf8",
-  );
+test("includes the navbar, hero, FAQ, and footer experience", async () => {
+  const [hero, sections, page] = await Promise.all([
+    readFile(new URL("../app/components/GlitchverseHero.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/GlitchverseSections.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
 
   assert.match(hero, /<header className=\{styles\.navbar\}>/);
   assert.match(hero, /BUILD/);
   assert.match(hero, /BEYOND THE/);
   assert.match(hero, /monitorRig/);
   assert.match(hero, /PrismGrid/);
+  assert.doesNotMatch(hero, /styles\.primaryCta/);
   assert.match(hero, /window\.addEventListener\("pointermove", moveMonitor/);
   assert.match(hero, /requestAnimationFrame\(followCursor\)/);
   assert.match(hero, /target\.x - current\.x\) \* 0\.24/);
-  assert.doesNotMatch(hero, /<footer|<article/);
+  assert.match(page, /GlitchverseSections/);
+  assert.match(sections, /<footer/);
+  assert.match(sections, /AsciiFire/);
+  assert.match(sections, /Tetris/);
+  assert.match(sections, /HOW DO I REGISTER FOR THE HACKATHON\?/);
+});
+
+test("keeps the redesigned navbar solid and responsive", async () => {
+  const styles = await readFile(
+    new URL("../app/components/GlitchverseHero.module.css", import.meta.url),
+    "utf8",
+  );
+  const navbar = styles.slice(styles.indexOf(".navbar {"), styles.indexOf(".heroGrid {"));
+
+  assert.match(navbar, /border-block: 1px solid/);
+  assert.match(navbar, /box-shadow:[\s\S]*?inset 4px 0 0 var\(--lime\)/);
+  assert.match(navbar, /\.navLinks a \+ a \{[\s\S]*?border-left/);
+  assert.match(navbar, /\.navCta \{[\s\S]*?background: var\(--lime\)/);
+  assert.match(navbar, /clip-path: polygon/);
+  assert.doesNotMatch(navbar, /color: transparent|-webkit-text-stroke|backdrop-filter/);
+  assert.match(styles, /@media \(max-width: 760px\) \{[\s\S]*?\.navbar \{[\s\S]*?height: 66px/);
 });
 
 test("uses native Next.js without Vite", async () => {
@@ -67,7 +89,7 @@ test("self-hosts and consistently applies the supplied display font", async () =
   assert.match(globals, /\/fonts\/cyber-city\.otf/);
   assert.match(styles, /\.title \{[\s\S]*?font-family: var\(--font-body\)/);
   assert.match(styles, /\.title \.screenWord \{[\s\S]*?font-family: inherit/);
-  assert.match(styles, /\.primaryCta > span:first-child \{[\s\S]*?font-family: var\(--font-body\)/);
+  assert.doesNotMatch(styles, /\.primaryCta|\.ctaArrow/);
   assert.match(styles, /var\(--font-brand\)/);
   assert.match(globals, /--font-screen:/);
   assert.match(styles, /font-family: var\(--font-screen\)/);
@@ -83,7 +105,11 @@ test("adds layered CRT glitches with reduced-motion support", async () => {
   assert.match(hero, /styles\.glitchBands/);
   assert.match(hero, /styles\.glitchNoise/);
   assert.match(hero, /styles\.signalLoss/);
-  assert.match(hero, /data-text=\{"MAKE\\nIT REAL"\}/);
+  assert.match(hero, /data-text=\{"CODEUTSAVA\\nX\.O"\}/);
+  assert.match(hero, /styles\.editionTen/);
+  assert.match(hero, /styles\.editionDas/);
+  assert.match(styles, /@keyframes editionTen/);
+  assert.match(styles, /@keyframes editionDas/);
   assert.match(styles, /@keyframes headlineGlitchTop/);
   assert.match(styles, /@keyframes glitchBand/);
   assert.match(styles, /@keyframes screenCrash/);
