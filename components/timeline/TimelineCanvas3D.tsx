@@ -442,8 +442,8 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const isTransitioning = expProgress > 0.04 && expProgress < 0.94;
         const expansionGlitch = isTransitioning ? Math.sin(expProgress * Math.PI) : 0;
         
-        // Near-camera proximity glitch (starts when reaching close distance relZ < 260)
-        const nearExitGlitch = proj.relZ < 260 ? Math.pow((260 - proj.relZ) / 240, 1.25) : 0;
+        // Near-camera proximity glitch (delayed until scrolling closer: relZ < 170)
+        const nearExitGlitch = proj.relZ < 170 ? Math.pow((170 - proj.relZ) / 150, 1.5) : 0;
         const totalGlitch = Math.min(1.0, expansionGlitch + nearExitGlitch);
         const isCardGlitching = isTransitioning || nearExitGlitch > 0.04;
         
