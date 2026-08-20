@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GlitchverseHero } from "./components/GlitchverseHero";
+import { SponsorSection } from "./components/SponsorSection";
 import { TimelineRoad } from "@/components/timeline/TimelineRoad";
 import { GlitchverseSections } from "./components/GlitchverseSections";
 
@@ -13,6 +14,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <GlitchverseHero />
+     <SponsorSection />
       <TimelineRoad />
       <GlitchverseSections />
     </div>
