@@ -436,24 +436,25 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const isHovered = idx === hoveredNodeIndexRef.current;
         const isTargetActive = isActive || isHovered;
 
-        // Smooth scroll-activated expansion progress
+        // Smooth scroll-activated expansion progress (faster, snappier transition)
         const currentProg = expansionProgressRef.current[idx];
         const targetProg = isTargetActive ? 1.0 : 0.0;
-        expansionProgressRef.current[idx] += (targetProg - currentProg) * 0.16;
+        expansionProgressRef.current[idx] += (targetProg - currentProg) * 0.28;
         const expProgress = expansionProgressRef.current[idx];
 
-        // ITSV Glitch Intensity
-        const isTransitioning = expProgress > 0.04 && expProgress < 0.94;
-        const expansionGlitch = isTransitioning ? Math.sin(expProgress * Math.PI) : 0;
+        // ITSV Glitch Intensity:
+        // 1. Snappy glitch during expansion on arrival
+        const isExpanding = isTargetActive && expProgress > 0.05 && expProgress < 0.92;
+        const expansionGlitch = isExpanding ? Math.sin(expProgress * Math.PI) : 0;
         
-        // Near-camera proximity glitch (delayed until scrolling closer: relZ < 170)
-        const nearExitGlitch = proj.relZ < 170 ? Math.pow((170 - proj.relZ) / 150, 1.5) : 0;
+        // 2. Near-camera exit glitch: triggers only when almost about to scroll out of the card (relZ < 85)
+        const nearExitGlitch = proj.relZ < 85 ? Math.pow((85 - proj.relZ) / 70, 1.6) : 0;
 
-        // Far-away horizon disappearance glitch (when points/cards are far away: relZ > 1550)
-        const farDistanceGlitch = proj.relZ > 1550 ? Math.pow((proj.relZ - 1550) / 800, 1.3) : 0;
+        // 3. Far-away horizon disappearance glitch (when points/cards are far away: relZ > 1600)
+        const farDistanceGlitch = proj.relZ > 1600 ? Math.pow((proj.relZ - 1600) / 750, 1.3) : 0;
 
         const totalGlitch = Math.min(1.0, expansionGlitch + nearExitGlitch + farDistanceGlitch);
-        const isOrbGlitching = isTransitioning || nearExitGlitch > 0.04 || farDistanceGlitch > 0.04;
+        const isOrbGlitching = isExpanding || nearExitGlitch > 0.04 || farDistanceGlitch > 0.04;
         const isCardGlitching = isOrbGlitching;
         
         // Jitter displacements
