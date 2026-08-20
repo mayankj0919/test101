@@ -104,10 +104,17 @@ export const TimelineRoad: React.FC = () => {
       id="timeline" 
       ref={stickyContainerRef} 
       className="relative w-full bg-[#020104]"
-      style={{ height: `${(TIMELINE_EVENTS.length + 2) * 72}vh` }}
+      style={{ 
+        height: `${(TIMELINE_EVENTS.length + 2) * 72}vh`,
+        willChange: 'transform',
+        touchAction: 'pan-y'
+      }}
     >
       {/* FULLSCREEN PINNED STICKY VIEWPORT (100vw x 100vh) */}
-      <div className="sticky top-0 w-full h-screen overflow-hidden flex flex-col justify-between select-none">
+      <div 
+        className="sticky top-0 w-full h-screen overflow-hidden flex flex-col justify-between select-none"
+        style={{ transform: 'translateZ(0)' }}
+      >
 
         {/* 1. FULL-BLEED 3D PERSPECTIVE CANVAS */}
         <TimelineCanvas3D

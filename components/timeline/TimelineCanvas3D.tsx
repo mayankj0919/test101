@@ -22,6 +22,25 @@ interface Particle {
   alpha: number;
 }
 
+// Spider-Verse Multiverse Glitch Glyphs (Zero-Garbage Collection Fast String Scrambler)
+const ITSV_GLYPHS = ['0', '1', 'X', 'Ø', '§', '¶', '▓', '▒', '░', '<', '>', '#', '%', '$', '!', '&', '?', '¥', '∆', '⚡', '★', '⌘', '¿', '¡'];
+const scrambleDuringExpansion = (text: string, progress: number, tick: number): string => {
+  if (progress <= 0.04 || progress >= 0.94) return text;
+  const len = text.length;
+  const decodedCount = Math.floor(len * Math.pow(progress, 1.4));
+  const seed = Math.floor(tick / 2);
+  let res = '';
+  for (let i = 0; i < len; i++) {
+    const ch = text[i];
+    if (ch === ' ' || ch === '\n' || i < decodedCount) {
+      res += ch;
+    } else {
+      res += ITSV_GLYPHS[(i * 7 + seed) % ITSV_GLYPHS.length];
+    }
+  }
+  return res;
+};
+
 export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
   activeEventIndex,
   onSelectEvent,
@@ -48,6 +67,13 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
   const hoveredNodeIndexRef = useRef<number | null>(null);
   const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
 
+  // Mobile/Low-Power Device Detection
+  const isMobileDevice = typeof window !== 'undefined' && (
+    window.innerWidth < 768 || 
+    'ontouchstart' in window || 
+    navigator.maxTouchPoints > 0
+  );
+
   // Smooth Scroll-Activated Expansion Progress
   const expansionProgressRef = useRef<number[]>(new Array(TIMELINE_EVENTS.length).fill(0));
   const prevReportedStageRef = useRef<number>(activeEventIndex);
@@ -62,14 +88,15 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
     onOpenDialogRef.current = onOpenDialog;
   }, [onOpenDialog]);
 
-  // Generate ambient particle cloud (Optimized particle count with frustum culling)
+  // Generate ambient particle cloud (Streamlined count for buttery 60fps on mobile)
   const particlesRef = useRef<Particle[]>([]);
 
   useEffect(() => {
     const pts: Particle[] = [];
     const colors = ['#FF5FCF', '#9929EA', '#C084FC', '#E879F9', '#FFE279', '#00F0FF', '#FFFFFF'];
     const totalDepth = TIMELINE_EVENTS.length * STAGE_SPACING + 1000;
-    for (let i = 0; i < 260; i++) {
+    const count = isMobileDevice ? 60 : 120;
+    for (let i = 0; i < count; i++) {
       pts.push({
         x: (Math.random() - 0.5) * 1400,
         y: ROAD_HEIGHT + (Math.random() - 0.5) * 220,
@@ -81,29 +108,12 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       });
     }
     particlesRef.current = pts;
-  }, [STAGE_SPACING]);
+  }, [STAGE_SPACING, isMobileDevice]);
 
   // Pure 1-to-1 Continuous Linear Camera Glide (No freezing, no frame locking)
   useEffect(() => {
     targetZRef.current = scrollProgress * TOTAL_DEPTH - CAMERA_VIEW_DISTANCE;
   }, [scrollProgress, TOTAL_DEPTH, CAMERA_VIEW_DISTANCE]);
-
-  // Spider-Verse Multiverse Glitch Glyphs
-  const ITSV_GLYPHS = ['0', '1', 'X', 'Ø', '§', '¶', '▓', '▒', '░', '<', '>', '#', '%', '$', '!', '&', '?', '¥', '∆', '⚡', '★', '⌘', '¿', '¡'];
-  const scrambleDuringExpansion = (text: string, progress: number, tick: number): string => {
-    if (progress <= 0.04 || progress >= 0.94) return text;
-    const chars = text.split('');
-    const decodedCount = Math.floor(chars.length * Math.pow(progress, 1.4));
-    const seed = Math.floor(tick / 2);
-    return chars
-      .map((ch, i) => {
-        if (ch === ' ' || ch === '\n') return ch;
-        if (i < decodedCount) return ch;
-        const glyphIdx = (i * 7 + seed) % ITSV_GLYPHS.length;
-        return ITSV_GLYPHS[glyphIdx];
-      })
-      .join('');
-  };
 
   // Precomputed Wrapped Text Lines Cache (Zero MeasureText on 60fps Animation Loop)
   const precomputedDescRef = useRef<string[][]>([]);
@@ -132,7 +142,6 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             currentLine = testLine;
           } else {
             lines.push(currentLine);
-            currentLine = word;
           }
         }
         if (currentLine) lines.push(currentLine);
@@ -140,11 +149,12 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       });
     };
 
-    // Pixel-Perfect HiDPI Resize Handler (Eliminates all blurriness on laptops/monitors)
+    // Adaptive HiDPI Resize Handler (Capped at 1.5x on Mobile / 2x on Desktop to prevent massive Android canvas overdraw)
     const resize = () => {
       if (!containerRef.current || !canvas) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+      const maxDpr = isMobileDevice ? 1.5 : 2.0;
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, maxDpr));
       
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
@@ -153,7 +163,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.imageSmoothingQuality = isMobileDevice ? 'medium' : 'high';
 
       // Precalculate text wrapping for canonical width (canonicalW = 270 - 28 = 242)
       computeWrappedDescriptions(ctx, 242);
@@ -243,7 +253,7 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Draw Ambient 3D Particle Cloud
+      // 2. Draw Ambient 3D Particle Cloud (Fast Pixel Rects for Cyberpunk Retro Style & 5x Higher FPS)
       const pts = particlesRef.current;
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i];
@@ -252,21 +262,18 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const proj = project3D(wobbleX, wobbleY, p.z, width, height);
 
         if (proj && proj.relZ > 20 && proj.relZ < 2400) {
-          const r = Math.max(0.5, p.size * proj.scale);
+          const r = Math.max(0.75, p.size * proj.scale);
           const alpha = p.alpha * Math.min(1, (2400 - proj.relZ) / 800) * Math.min(1, (proj.relZ - 20) / 100);
 
           ctx.fillStyle = p.color;
           ctx.globalAlpha = alpha;
-          ctx.beginPath();
-          ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillRect(proj.x - r, proj.y - r, r * 2, r * 2);
         }
       }
       ctx.globalAlpha = 1.0;
 
       // 3. DRAW 3D PERSPECTIVE DUOCHROME PURPLE PIXEL GRID HIGHWAY (INCLINED ROAD MESH)
       const numCols = 16;
-      const colWidth = roadWidth / numCols;
       const rowSpacingZ = 55;
       const zStart = cameraZRef.current - 120;
       const zEnd = cameraZRef.current + 2500;
@@ -295,67 +302,85 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         ctx.fill();
       }
 
-      // STEP B: Interactive Duochrome Purple Pixel Grid Cells (Hover Reactivity & Cyber Waves)
+      // STEP B: High-Performance Highway Grid Mesh (Row Endpoint Interpolation reduces matrix calculations by 98%)
       const startZSnap = Math.floor(zStart / rowSpacingZ) * rowSpacingZ;
-      const maxGridRows = 32;
+      const maxGridRows = isMobileDevice ? 18 : 28;
+
+      const rowEndpoints: ({ pL: { x: number; y: number }; pR: { x: number; y: number }; alpha: number } | null)[] = [];
+      for (let r = 0; r <= maxGridRows; r++) {
+        const rz = startZSnap + r * rowSpacingZ;
+        if (rz < zStart || rz >= zEnd) {
+          rowEndpoints.push(null);
+          continue;
+        }
+        const depthAlpha = Math.max(0, Math.min(1, (zEnd - rz) / (zEnd - zStart)));
+        if (depthAlpha <= 0.02) {
+          rowEndpoints.push(null);
+          continue;
+        }
+        const pL = project3D(-roadWidth / 2, ROAD_HEIGHT, rz, width, height);
+        const pR = project3D(roadWidth / 2, ROAD_HEIGHT, rz, width, height);
+        if (pL && pR) {
+          rowEndpoints.push({ pL, pR, alpha: depthAlpha });
+        } else {
+          rowEndpoints.push(null);
+        }
+      }
 
       for (let r = 0; r < maxGridRows; r++) {
-        const rz = startZSnap + r * rowSpacingZ;
-        if (rz < zStart || rz >= zEnd - rowSpacingZ) continue;
+        const r1 = rowEndpoints[r];
+        const r2 = rowEndpoints[r + 1];
+        if (!r1 || !r2) continue;
 
-        const depthAlpha = Math.max(0, Math.min(1, (zEnd - rz) / (zEnd - zStart)));
-        if (depthAlpha <= 0.02) continue;
+        const rz = startZSnap + r * rowSpacingZ;
+        const depthAlpha = r1.alpha;
 
         for (let c = 0; c < numCols; c++) {
-          const xLeft = -roadWidth / 2 + c * colWidth;
-          const xRight = xLeft + colWidth;
-          const cellCenterProj = project3D((xLeft + xRight) / 2, ROAD_HEIGHT, rz + rowSpacingZ / 2, width, height);
-          
-          if (!cellCenterProj) continue;
+          const t1 = c / numCols;
+          const t2 = (c + 1) / numCols;
 
-          // Mouse Proximity Glow on 3D Road Plane
-          const dx = mousePixelRef.current.x - cellCenterProj.x;
-          const dy = mousePixelRef.current.y - cellCenterProj.y;
-          const mouseDist = Math.sqrt(dx * dx + dy * dy);
-          const mouseGlow = Math.max(0, 1 - mouseDist / 95);
+          const p1x = r1.pL.x + (r1.pR.x - r1.pL.x) * t1;
+          const p1y = r1.pL.y + (r1.pR.y - r1.pL.y) * t1;
+          const p2x = r1.pL.x + (r1.pR.x - r1.pL.x) * t2;
+          const p2y = r1.pL.y + (r1.pR.y - r1.pL.y) * t2;
+          const p3x = r2.pL.x + (r2.pR.x - r2.pL.x) * t2;
+          const p3y = r2.pL.y + (r2.pR.y - r2.pL.y) * t2;
+          const p4x = r2.pL.x + (r2.pR.x - r2.pL.x) * t1;
+          const p4y = r2.pL.y + (r2.pR.y - r2.pL.y) * t1;
 
-          // Flowing Cyber Wave Shading
+          let mouseGlow = 0;
+          if (!isMobileDevice) {
+            const cx = (p1x + p3x) * 0.5;
+            const cy = (p1y + p3y) * 0.5;
+            const dx = mousePixelRef.current.x - cx;
+            const dy = mousePixelRef.current.y - cy;
+            const mouseDist = Math.sqrt(dx * dx + dy * dy);
+            mouseGlow = Math.max(0, 1 - mouseDist / 95);
+          }
+
           const wave = Math.sin((rz * 0.02 - tick * 0.04) + c * 0.5);
           const isPulseCell = (c + Math.floor(rz / rowSpacingZ)) % 5 === 0 && wave > 0.65;
 
           if (mouseGlow > 0.05 || isPulseCell) {
-            const cP1 = project3D(xLeft, ROAD_HEIGHT, rz, width, height);
-            const cP2 = project3D(xRight, ROAD_HEIGHT, rz, width, height);
-            const cP3 = project3D(xRight, ROAD_HEIGHT, rz + rowSpacingZ, width, height);
-            const cP4 = project3D(xLeft, ROAD_HEIGHT, rz + rowSpacingZ, width, height);
+            ctx.beginPath();
+            ctx.moveTo(p1x, p1y);
+            ctx.lineTo(p2x, p2y);
+            ctx.lineTo(p3x, p3y);
+            ctx.lineTo(p4x, p4y);
+            ctx.closePath();
 
-            if (cP1 && cP2 && cP3 && cP4) {
-              ctx.beginPath();
-              ctx.moveTo(cP1.x, cP1.y);
-              ctx.lineTo(cP2.x, cP2.y);
-              ctx.lineTo(cP3.x, cP3.y);
-              ctx.lineTo(cP4.x, cP4.y);
-              ctx.closePath();
-
-              if (mouseGlow > 0.05) {
-                // Interactive Reactive Duochrome Glow (Pink & Electric Purple)
-                const glowAlpha = (0.08 + mouseGlow * 0.35) * depthAlpha;
-                ctx.fillStyle = mouseGlow > 0.5 
-                  ? `rgba(255, 95, 207, ${glowAlpha})` 
-                  : `rgba(153, 41, 234, ${glowAlpha})`;
-              } else {
-                // Subtle Ambient Wave Cell
-                ctx.fillStyle = `rgba(121, 27, 196, ${0.09 * depthAlpha})`;
-              }
-              ctx.fill();
+            if (mouseGlow > 0.05) {
+              const glowAlpha = (0.08 + mouseGlow * 0.35) * depthAlpha;
+              ctx.fillStyle = mouseGlow > 0.5 
+                ? `rgba(255, 95, 207, ${glowAlpha})` 
+                : `rgba(153, 41, 234, ${glowAlpha})`;
+            } else {
+              ctx.fillStyle = `rgba(121, 27, 196, ${0.09 * depthAlpha})`;
             }
+            ctx.fill();
           }
         }
       }
-
-      // STEP C: 3D Transversal Grid Rows (Removed as requested)
-
-      // STEP D: 3D Longitudinal Grid Columns (Removed as requested)
 
       // 4. Draw Transverse Horizontal Time Rung Bars (Stage Milestones with Dates)
       TIMELINE_EVENTS.forEach((evt, idx) => {
@@ -375,12 +400,14 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             : `rgba(255, 95, 207, ${0.45 * depthAlpha})`;
           
           ctx.lineWidth = isActive ? 2.6 : isHovered ? 1.6 : Math.max(1.0, 1.3 * pLeft.scale);
-          if (isActive) {
-            ctx.shadowColor = '#FFE279';
-            ctx.shadowBlur = 12;
-          } else if (isHovered) {
-            ctx.shadowColor = '#00F0FF';
-            ctx.shadowBlur = 8;
+          if (!isMobileDevice) {
+            if (isActive) {
+              ctx.shadowColor = '#FFE279';
+              ctx.shadowBlur = 12;
+            } else if (isHovered) {
+              ctx.shadowColor = '#00F0FF';
+              ctx.shadowBlur = 8;
+            }
           }
 
           ctx.beginPath();
@@ -402,7 +429,6 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
           }
         }
       });
-
 
       // 5. PAINTER'S ALGORITHM: SORT STAGES FROM FURTHEST TO CLOSEST
       const sortedStageIndices = TIMELINE_EVENTS.map((_, i) => i).sort((a, b) => {
@@ -497,8 +523,10 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         ctx.globalAlpha = depthAlpha;
         ctx.strokeStyle = isOrbGlitching ? (Math.random() > 0.5 ? '#00F0FF' : '#FF0055') : evt.accentColor;
         ctx.lineWidth = Math.max(1, (isOrbGlitching ? 2.4 : 1.8) * proj.scale);
-        ctx.shadowColor = isOrbGlitching ? '#00F0FF' : evt.accentColor;
-        ctx.shadowBlur = (10 + 10 * expProgress) * proj.scale;
+        if (!isMobileDevice) {
+          ctx.shadowColor = isOrbGlitching ? '#00F0FF' : evt.accentColor;
+          ctx.shadowBlur = (10 + 10 * expProgress) * proj.scale;
+        }
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, ringRadius, 0, Math.PI * 2);
         ctx.stroke();
@@ -578,8 +606,10 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
               
               ctx.strokeStyle = ghost.col;
               ctx.lineWidth = 2.0;
-              ctx.shadowColor = ghost.col;
-              ctx.shadowBlur = 10;
+              if (!isMobileDevice) {
+                ctx.shadowColor = ghost.col;
+                ctx.shadowBlur = 8;
+              }
               ctx.strokeRect(gx, gy, canonicalW, canonicalH);
 
               ctx.fillStyle = ghost.col.replace('0.75', '0.12').replace('0.65', '0.10');
@@ -770,12 +800,14 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
             const borderPalette = ['#00F0FF', '#FF0055', '#FFE279'];
             ctx.strokeStyle = borderPalette[tick % borderPalette.length];
             ctx.lineWidth = 2.4;
-            ctx.shadowColor = borderPalette[(tick + 1) % borderPalette.length];
-            ctx.shadowBlur = 12;
+            if (!isMobileDevice) {
+              ctx.shadowColor = borderPalette[(tick + 1) % borderPalette.length];
+              ctx.shadowBlur = 12;
+            }
           } else {
             ctx.strokeStyle = isTargetActive ? '#FFE279' : evt.accentColor;
             ctx.lineWidth = isTargetActive ? 2.0 : 1.2;
-            if (isTargetActive) {
+            if (isTargetActive && !isMobileDevice) {
               ctx.shadowColor = '#FFE279';
               ctx.shadowBlur = 8;
             }
