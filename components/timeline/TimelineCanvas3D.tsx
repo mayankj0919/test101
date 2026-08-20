@@ -436,10 +436,10 @@ export const TimelineCanvas3D: React.FC<TimelineCanvas3DProps> = ({
         const isHovered = idx === hoveredNodeIndexRef.current;
         const isTargetActive = isActive || isHovered;
 
-        // Smooth scroll-activated expansion progress
+        // Smooth scroll-activated expansion progress (faster, snappier transition)
         const currentProg = expansionProgressRef.current[idx];
         const targetProg = isTargetActive ? 1.0 : 0.0;
-        expansionProgressRef.current[idx] += (targetProg - currentProg) * 0.16;
+        expansionProgressRef.current[idx] += (targetProg - currentProg) * 0.28;
         const expProgress = expansionProgressRef.current[idx];
 
         // ITSV Glitch Intensity
