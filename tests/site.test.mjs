@@ -14,6 +14,7 @@ test("includes the navbar, hero, FAQ, and footer experience", async () => {
   assert.match(hero, /BEYOND THE/);
   assert.match(hero, /monitorRig/);
   assert.match(hero, /PrismGrid/);
+  assert.doesNotMatch(hero, /styles\.primaryCta/);
   assert.match(hero, /window\.addEventListener\("pointermove", moveMonitor/);
   assert.match(hero, /requestAnimationFrame\(followCursor\)/);
   assert.match(hero, /target\.x - current\.x\) \* 0\.24/);
@@ -87,7 +88,7 @@ test("self-hosts and consistently applies the supplied display font", async () =
   assert.match(globals, /\/fonts\/cyber-city\.otf/);
   assert.match(styles, /\.title \{[\s\S]*?font-family: var\(--font-body\)/);
   assert.match(styles, /\.title \.screenWord \{[\s\S]*?font-family: inherit/);
-  assert.match(styles, /\.primaryCta > span:first-child \{[\s\S]*?font-family: var\(--font-body\)/);
+  assert.doesNotMatch(styles, /\.primaryCta|\.ctaArrow/);
   assert.match(styles, /var\(--font-brand\)/);
   assert.match(globals, /--font-screen:/);
   assert.match(styles, /font-family: var\(--font-screen\)/);
